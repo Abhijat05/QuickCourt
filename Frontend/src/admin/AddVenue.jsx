@@ -17,12 +17,79 @@ export default function AdminAddVenue() {
     location: '',
     sportTypes: '',
     amenities: '',
-    pricePerHour: ''
+    pricePerHour: '',
+    courts: [] // Add courts array
   });
+  
+  // Add court state
+  const [newCourt, setNewCourt] = useState({
+    name: '',
+    sportType: '',
+    pricePerHour: '',
+    openingTime: '08:00',
+    closingTime: '22:00',
+    count: 1
+  });
+  
+  const [errors, setErrors] = useState({});
+  const [courtErrors, setCourtErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Add handleCourtChange function
+  const handleCourtChange = (e) => {
+    const { name, value } = e.target;
+    setNewCourt(prev => ({ ...prev, [name]: value }));
+    if (courtErrors[name]) {
+      setCourtErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+  
+  // Add validateCourt function
+  const validateCourt = () => {
+    const errors = {};
+    if (!newCourt.name.trim()) errors.name = 'Court name is required';
+    if (!newCourt.sportType.trim()) errors.sportType = 'Sport type is required';
+    if (!newCourt.pricePerHour || isNaN(newCourt.pricePerHour) || newCourt.pricePerHour <= 0) {
+      errors.pricePerHour = 'Price must be greater than 0';
+    }
+    if (!newCourt.count || isNaN(newCourt.count) || newCourt.count < 1) {
+      errors.count = 'Count must be at least 1';
+    }
+    
+    const openingHour = parseInt(newCourt.openingTime.split(':')[0]);
+    const closingHour = parseInt(newCourt.closingTime.split(':')[0]);
+    if (closingHour <= openingHour) {
+      errors.closingTime = 'Closing time must be after opening time';
+    }
+    
+    return errors;
+  };
+  
+  // Add addCourt function
+  const addCourt = () => {
+    const validationErrors = validateCourt();
+    if (Object.keys(validationErrors).length > 0) {
+      setCourtErrors(validationErrors);
+      return;
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      courts: [...prev.courts, newCourt]
+    }));
+    setNewCourt({ 
+      name: '', 
+      sportType: '', 
+      pricePerHour: '', 
+      openingTime: '08:00', 
+      closingTime: '22:00',
+      count: 1 
+    });
+    setCourtErrors({});
   };
 
   const handleSubmit = async (e) => {
@@ -30,8 +97,22 @@ export default function AdminAddVenue() {
     setIsSubmitting(true);
 
     try {
-      // Add venue as admin (this should be added to your API service)
-      await adminService.createVenue(formData);
+      // Process data including courts
+      const sanitizedData = {
+        ...formData,
+        sportTypes: formData.sportTypes.split(',').map(type => type.trim()),
+        amenities: formData.amenities ? formData.amenities.split(',').map(amenity => amenity.trim()) : [],
+        courts: formData.courts.map(court => ({
+          name: court.name,
+          sportType: court.sportType,
+          pricePerHour: parseFloat(court.pricePerHour),
+          openingTime: court.openingTime,
+          closingTime: court.closingTime,
+          count: parseInt(court.count)
+        }))
+      };
+      
+      await adminService.createVenue(sanitizedData);
       toast.success('Venue created successfully!');
       navigate('/admin/venues');
     } catch (err) {
@@ -159,6 +240,112 @@ export default function AdminAddVenue() {
                 className="w-full p-2 border border-input rounded-md"
                 rows="4"
               ></textarea>
+            </div>
+            
+            {/* Court Details */}
+            <div>
+              <h3 className="text-lg font-medium mb-3">Add Courts</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <input
+                    type="text"
+                    name="name"
+                    value={newCourt.name}
+                    onChange={handleCourtChange}
+                    placeholder="Court Name"
+                    className={`p-2 border rounded-md w-full ${courtErrors.name ? 'border-destructive' : 'border-input'}`}
+                  />
+                  {courtErrors.name && <p className="text-xs text-destructive mt-1">{courtErrors.name}</p>}
+                </div>
+                
+                <div>
+                  <input
+                    type="text"
+                    name="sportType"
+                    value={newCourt.sportType}
+                    onChange={handleCourtChange}
+                    placeholder="Sport Type"
+                    className={`p-2 border rounded-md w-full ${courtErrors.sportType ? 'border-destructive' : 'border-input'}`}
+                  />
+                  {courtErrors.sportType && <p className="text-xs text-destructive mt-1">{courtErrors.sportType}</p>}
+                </div>
+                
+                <div>
+                  <input
+                    type="number"
+                    name="pricePerHour"
+                    value={newCourt.pricePerHour}
+                    onChange={handleCourtChange}
+                    placeholder="Price Per Hour"
+                    className={`p-2 border rounded-md w-full ${courtErrors.pricePerHour ? 'border-destructive' : 'border-input'}`}
+                    min="0"
+                    step="0.01"
+                  />
+                  {courtErrors.pricePerHour && <p className="text-xs text-destructive mt-1">{courtErrors.pricePerHour}</p>}
+                </div>
+                
+                <div>
+                  <input
+                    type="number"
+                    name="count"
+                    value={newCourt.count}
+                    onChange={handleCourtChange}
+                    placeholder="Count"
+                    className={`p-2 border rounded-md w-full ${courtErrors.count ? 'border-destructive' : 'border-input'}`}
+                    min="1"
+                  />
+                  {courtErrors.count && <p className="text-xs text-destructive mt-1">{courtErrors.count}</p>}
+                </div>
+                
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="block text-xs mb-1">Opening Time</label>
+                    <input
+                      type="time"
+                      name="openingTime"
+                      value={newCourt.openingTime}
+                      onChange={handleCourtChange}
+                      className="p-2 border rounded-md w-full"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs mb-1">Closing Time</label>
+                    <input
+                      type="time"
+                      name="closingTime"
+                      value={newCourt.closingTime}
+                      onChange={handleCourtChange}
+                      className="p-2 border rounded-md w-full"
+                    />
+                    {courtErrors.closingTime && <p className="text-xs text-destructive mt-1">{courtErrors.closingTime}</p>}
+                  </div>
+                </div>
+                
+                <div>
+                  <Button type="button" variant="outline" onClick={addCourt} className="w-full">
+                    Add Court
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Display added courts */}
+              {formData.courts.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Added Courts:</h4>
+                  <ul className="space-y-2">
+                    {formData.courts.map((court, index) => (
+                      <li key={index} className="p-2 border rounded-md flex justify-between">
+                        <span>
+                          {court.name} ({court.sportType}) - ${court.pricePerHour}/hr - {court.count} {court.count > 1 ? 'courts' : 'court'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {court.openingTime} - {court.closingTime}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end space-x-2 pt-4">

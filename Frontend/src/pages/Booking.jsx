@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { venueService, bookingService } from '../services/api';
+import { venueService, bookingService, availabilityService, ownerService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -27,6 +27,7 @@ export default function Booking() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [courtLoading, setCourtLoading] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -34,14 +35,23 @@ export default function Booking() {
   useEffect(() => {
     const fetchVenueDetails = async () => {
       try {
+        setLoading(true);
         const response = await venueService.getVenueById(venueId);
+        console.log("Venue data:", response.data);
         setVenue(response.data);
+        
+        // Check if courts exist and log them
         if (response.data.courts && response.data.courts.length > 0) {
+          console.log("Courts found:", response.data.courts);
+          // Only set the first court as selected initially
+          // We'll fetch its detailed information separately
           setSelectedCourt(response.data.courts[0]);
+        } else {
+          console.warn("No courts found for this venue");
         }
       } catch (err) {
+        console.error("Error fetching venue:", err);
         setError('Failed to load venue details');
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -53,40 +63,22 @@ export default function Booking() {
   // Fetch available time slots when court or date changes
   useEffect(() => {
     const fetchAvailableTimeSlots = async () => {
-      if (!selectedCourt || !selectedDate) return;
+      if (!selectedCourt || !selectedDate) {
+        console.log("Missing court or date, not fetching time slots");
+        return;
+      }
       
       try {
-        setLoading(true);
-        // Typically you'd call an API endpoint like:
-        // const response = await bookingService.getAvailableTimeSlots(selectedCourt.id, selectedDate);
-        
-        // For this example, we'll generate mock time slots
-        const openingHour = parseInt(selectedCourt.openingTime?.split(':')[0] || 8);
-        const closingHour = parseInt(selectedCourt.closingTime?.split(':')[0] || 22);
-        
-        const mockTimeSlots = [];
-        for (let hour = openingHour; hour < closingHour; hour++) {
-          // Generate time in 24-hour format
-          const startTime = `${hour.toString().padStart(2, '0')}:00`;
-          const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
-          
-          // Randomly determine if the slot is available (80% chance)
-          const available = Math.random() > 0.2;
-          
-          mockTimeSlots.push({
-            id: `${hour}`,
-            startTime,
-            endTime,
-            available
-          });
-        }
-        
-        setAvailableTimeSlots(mockTimeSlots);
+        setCourtLoading(true);
+        console.log(`Fetching time slots for court ${selectedCourt.id} on ${selectedDate}`);
+        const response = await availabilityService.getCourtAvailability(selectedCourt.id, selectedDate);
+        console.log("Time slots received:", response.data);
+        setAvailableTimeSlots(response.data);
       } catch (err) {
+        console.error("Error fetching time slots:", err);
         toast.error('Failed to load available time slots');
-        console.error(err);
       } finally {
-        setLoading(false);
+        setCourtLoading(false);
       }
     };
     
@@ -125,7 +117,7 @@ export default function Booking() {
       const response = await bookingService.createBooking(bookingData);
       
       toast.success('Booking confirmed successfully!');
-      navigate('/dashboard');
+      navigate('/bookings');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create booking');
       console.error(err);
@@ -212,25 +204,29 @@ export default function Booking() {
                 {/* Court selection */}
                 <div>
                   <h3 className="text-lg font-medium mb-3">Select a Court</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {venue.courts && venue.courts.map(court => (
-                      <button
-                        key={court.id}
-                        onClick={() => handleCourtSelection(court)}
-                        className={`p-4 border rounded-lg text-left hover:border-primary transition-colors ${
-                          selectedCourt?.id === court.id 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border'
-                        }`}
-                      >
-                        <div className="font-medium">{court.name}</div>
-                        <div className="flex justify-between items-center mt-1">
-                          <span className="text-sm text-muted-foreground">{court.sportType}</span>
-                          <span className="text-sm font-medium">${court.pricePerHour}/hr</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  {venue && venue.courts && venue.courts.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {venue.courts.map(court => (
+                        <button
+                          key={court.id}
+                          onClick={() => handleCourtSelection(court)}
+                          className={`p-4 border rounded-lg text-left hover:border-primary transition-colors ${
+                            selectedCourt?.id === court.id 
+                              ? 'border-primary bg-primary/5' 
+                              : 'border-border'
+                          }`}
+                        >
+                          <div className="font-medium">{court.name}</div>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-sm text-muted-foreground">{court.sportType}</span>
+                            <span className="text-sm font-medium">${court.pricePerHour}/hr</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No courts available for this venue</p>
+                  )}
                 </div>
                 
                 {/* Date selection */}
@@ -248,21 +244,21 @@ export default function Booking() {
                 {/* Time slots */}
                 <div>
                   <h3 className="text-lg font-medium mb-3">Select Time Slot</h3>
-                  {loading ? (
+                  {courtLoading ? (
                     <div className="flex justify-center p-4">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                      {availableTimeSlots.map(slot => (
+                      {availableTimeSlots.map((slot, index) => (
                         <button
-                          key={slot.id}
+                          key={index}
                           disabled={!slot.available}
                           onClick={() => handleTimeSlotSelection(slot)}
                           className={`p-2 text-sm text-center border rounded-md transition-colors ${
                             !slot.available 
                               ? 'bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60' 
-                              : selectedTimeSlot?.id === slot.id
+                              : selectedTimeSlot?.startTime === slot.startTime
                                 ? 'bg-primary/10 border-primary text-primary'
                                 : 'hover:border-primary/50 hover:bg-primary/5'
                           }`}
@@ -270,6 +266,11 @@ export default function Booking() {
                           {slot.startTime} - {slot.endTime}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {!courtLoading && availableTimeSlots.length === 0 && selectedCourt && (
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground">No time slots available for this date</p>
                     </div>
                   )}
                 </div>
@@ -325,7 +326,11 @@ export default function Booking() {
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
                   <span className="text-lg">
-                    ${selectedTimeSlot && selectedCourt ? selectedCourt.pricePerHour : '0.00'}
+                    ${selectedTimeSlot && selectedCourt 
+                      ? (selectedCourt.pricePerHour * 
+                         (parseInt(selectedTimeSlot.endTime) - 
+                          parseInt(selectedTimeSlot.startTime))).toFixed(2) 
+                      : '0.00'}
                   </span>
                 </div>
                 

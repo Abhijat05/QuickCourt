@@ -102,8 +102,8 @@ export const adminService = {
   deleteUser: (userId) => safeApiCall(() => api.delete(`/admin/users/${userId}`)),
   changeUserRole: (data) => safeApiCall(() => api.post('/admin/users/role', data)),
   getPendingVenues: () => safeApiCall(() => api.get('/admin/venues/pending')),
-  approveVenue: (venueId) => safeApiCall(() => api.patch(`/admin/venues/${venueId}/approve`)),
-  createVenue: (data) => safeApiCall(() => api.post('/admin/venues', data)),
+  approveVenue: (venueId) => safeApiCall(() => api.post(`/admin/venues/${venueId}/approve`)),
+  createVenue: (data) => safeApiCall(() => api.post('/owner/venues', data)),
 };
 
 export const imageService = {
@@ -117,6 +117,17 @@ export const imageService = {
   uploadMultipleVenueImages: (venueId, formData) => safeApiCall(() => api.post(`/images/venues/${venueId}/multiple`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })),
+};
+
+export const gameService = {
+  getPublicGames: () => safeApiCall(() => api.get('/games/public')),
+  getGameDetails: (gameId) => safeApiCall(() => api.get(`/games/${gameId}`)),
+  createPublicGame: (data) => safeApiCall(() => api.post('/games/create', data)),
+  joinPublicGame: (gameId) => safeApiCall(() => api.post(`/games/${gameId}/join`)),
+  leavePublicGame: (gameId) => safeApiCall(() => api.post(`/games/${gameId}/leave`)),
+  getUserGames: () => safeApiCall(() => api.get('/games/user/participating')),
+  getGameParticipants: (gameId) => safeApiCall(() => api.get(`/games/${gameId}/participants`)),
+  checkGameParticipants: (gameId) => safeApiCall(() => api.get(`/games/${gameId}/check-participants`)),
 };
 
 export default api;

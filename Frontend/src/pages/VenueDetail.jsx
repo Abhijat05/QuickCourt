@@ -24,6 +24,7 @@ import {
   Star, 
   ChevronLeft, 
   Check,
+  User,
   Heart
 } from 'lucide-react';
 
@@ -124,11 +125,11 @@ export default function VenueDetail() {
             )}
             <div className="absolute top-4 right-4 flex gap-2">
               <Badge className="bg-accent text-white">
-                {venue.sportTypes[0]}
+                {Array.isArray(venue.sportTypes) ? venue.sportTypes[0] : venue.sportTypes.split(',')[0]}
               </Badge>
-              {venue.sportTypes.slice(1).map((sport, i) => (
+              {(Array.isArray(venue.sportTypes) ? venue.sportTypes.slice(1) : venue.sportTypes.split(',').slice(1)).map((sport, i) => (
                 <Badge key={i} variant="outline" className="bg-card/80 backdrop-blur-sm">
-                  {sport}
+                  {sport.trim()}
                 </Badge>
               ))}
             </div>
@@ -193,10 +194,10 @@ export default function VenueDetail() {
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Amenities</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  {venue.amenities?.map((amenity, i) => (
+                  {(Array.isArray(venue.amenities) ? venue.amenities : venue.amenities?.split(',')).map((amenity, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-success" />
-                      <span>{amenity}</span>
+                      <span>{amenity.trim()}</span>
                     </div>
                   ))}
                 </div>

@@ -17,6 +17,9 @@ router.post("/users/role", adminController.changeUserRole);
 router.get("/venues/pending", adminController.getPendingVenues);
 router.patch("/venues/:venueId/approve", adminController.approveVenue);
 
+// Venue rejection
+router.patch("/venues/:venueId/reject", adminController.rejectVenue); // New endpoint for admin to reject venues
+
 // Admin venue creation
 router.post("/venues", adminController.createVenue);
 

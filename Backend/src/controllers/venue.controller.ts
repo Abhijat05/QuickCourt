@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../config/db"; // Corrected import path
 import { venues, courts } from "../db/schema";
-import { eq, and, like, gte, lte } from "drizzle-orm"; // Added missing imports
+import { eq, and, like, gte, lte, sql } from "drizzle-orm"; // Added missing imports
 
 // Get all approved venues
 export const getAllVenues = async (req: Request, res: Response) => {
@@ -60,11 +60,16 @@ export const searchVenues = async (req: Request, res: Response) => {
     }
     
     if (priceMin) {
-      conditions.push(gte(venues.pricePerHour, parseFloat(priceMin as string)));
+      // Use sql template for safe type handling
+      conditions.push(
+        sql`compare_price_strings(${venues.pricePerHour}, ${priceMin as string}, 'gte')`
+      );
     }
     
     if (priceMax) {
-      conditions.push(lte(venues.pricePerHour, parseFloat(priceMax as string)));
+      conditions.push(
+        sql`compare_price_strings(${venues.pricePerHour}, ${priceMax as string}, 'lte')`
+      );
     }
     
     // Apply all conditions with AND

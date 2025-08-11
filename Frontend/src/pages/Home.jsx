@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import BadgeButton from '../components/ui/badge-button';
 import { motion } from 'framer-motion';
 import { ExpandedTabs } from '../components/ui/expanded-tabs';
-import { ChevronRight, Calendar, MapPin, Star, Shield, Clock, Filter, Globe } from 'lucide-react';
-import { WrapButton } from "../components/ui/wrap-button"; // Fixed import path
+import { ChevronRight, Calendar, MapPin, Star, Shield, Clock, Filter, Globe, Search } from 'lucide-react';
+import { WrapButton } from "../components/ui/wrap-button";
 
 export default function Home() {
   const { user } = useAuth();
@@ -208,10 +209,12 @@ export default function Home() {
                 <div className="text-center md:text-left">
                   <h3 className="text-2xl font-bold mb-2">Real-time Court Availability</h3>
                   <p className="text-muted-foreground mb-4 max-w-md">Our system updates availability in real-time, ensuring you always see accurate information.</p>
-                  <Button className="gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Check Available Courts
-                  </Button>
+                  <BadgeButton 
+                    icon={Calendar}
+                    text="Check Available Courts"
+                    variant="default"
+                    className="hover:bg-primary/90"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-primary/10 rounded-lg p-4 text-center">
@@ -354,6 +357,58 @@ export default function Home() {
           </div>
         </motion.div>
 
+        {/* Live Activity Feed */}
+        <motion.div
+          className="py-16 bg-card/50"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-4">Live Activity</h2>
+              <p className="text-muted-foreground">See what's happening right now on QuickCourt</p>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <div className="space-y-4">
+                {[
+                  { user: "Rajesh K.", action: "booked a Tennis court", location: "Mumbai Sports Complex", time: "2 minutes ago", sport: "🎾" },
+                  { user: "Priya S.", action: "completed a Badminton session", location: "Delhi Indoor Arena", time: "5 minutes ago", sport: "🏸" },
+                  { user: "Arjun M.", action: "rated a Basketball court", location: "Bangalore Sports Hub", time: "8 minutes ago", sport: "🏀", rating: 5 },
+                  { user: "Sneha R.", action: "joined a Football match", location: "Chennai Ground", time: "12 minutes ago", sport: "⚽" }
+                ].map((activity, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex items-center gap-4 p-4 bg-background rounded-lg border hover:shadow-md transition-shadow"
+                    initial={{ opacity: 0, x: -50 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white font-medium">
+                      {activity.user.split(' ')[0][0]}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-medium">{activity.user}</span> {activity.action} at{' '}
+                        <span className="text-primary">{activity.location}</span>
+                        {activity.rating && (
+                          <span className="ml-2">
+                            {'⭐'.repeat(activity.rating)}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                    <div className="text-2xl">{activity.sport}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Sports Section with Tabs and Dynamic Content */}
         <motion.div
           className="mb-24"
@@ -488,6 +543,17 @@ export default function Home() {
                 Join thousands of sports enthusiasts who use QuickCourt to find and book courts.
                 Sign up today and get your first booking at <span className="font-bold text-white">20% off!</span>
               </motion.p>
+
+              {/* Add this before the "Create Free Account" button in the CTA section */}
+              <div className="flex justify-center mb-8">
+                <BadgeButton 
+                  icon={Star}
+                  text="Featured Promotion"
+                  variant="default"
+                  className="bg-white text-primary"
+                />
+              </div>
+
               <motion.div
                 className="flex flex-col sm:flex-row gap-4 justify-center"
                 initial={{ opacity: 0, y: 20 }}
@@ -518,7 +584,153 @@ export default function Home() {
         </motion.div>
       </div>
 
-      <style jsx global>{`
+      {/* Enhanced Hero Section */}
+      <div className="relative h-[100vh] flex items-center justify-center overflow-hidden">
+        {/* Add success indicators */}
+        <div className="absolute top-8 left-8 z-30 hidden lg:block">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1 }}
+            className="bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20"
+          >
+            <div className="flex items-center gap-2 text-white">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm">500+ Courts Available</span>
+            </div>
+          </motion.div>
+        </div>
+            
+        <div className="absolute top-8 right-8 z-30 hidden lg:block">
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.2 }}
+            className="bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20"
+          >
+            <div className="flex items-center gap-2 text-white">
+              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+              <span className="text-sm">4.9/5 Rating</span>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Enhanced main content */}
+        <div className="container mx-auto px-4 relative z-20">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Add trust indicator */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mb-6"
+            >
+              <Badge className="bg-white/20 text-white border-white/30 px-4 py-2">
+                🏆 Trusted by 10,000+ Players
+              </Badge>
+            </motion.div>
+
+            {/* Improved headline with value proposition */}
+            <motion.h1
+              className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-green-100 bg-clip-text text-transparent leading-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+            >
+              Book Courts in
+              <br />
+              <span className="bg-gradient-to-r from-primary via-accent to-success bg-clip-text">30 Seconds</span>
+            </motion.h1>
+
+            <motion.p
+              className="text-xl text-white/90 mb-8 leading-relaxed max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+            >
+              Find, book, and play at premium sports facilities near you. 
+              <strong> No calls, no queues, just instant bookings.</strong>
+            </motion.p>
+
+            {/* Enhanced CTA section */}
+            {!user ? (
+              <motion.div
+                className="space-y-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.4 }}
+              >
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <WrapButton
+                    href="/signup"
+                    color="primary"
+                    className="text-lg px-8 py-4 shadow-2xl"
+                  >
+                    Start Playing Today
+                  </WrapButton>
+
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    asChild 
+                    className="hover:bg-white/10 border-white/30 text-white text-lg px-8 py-4 backdrop-blur-sm"
+                  >
+                    <Link to="/find">Browse Courts</Link>
+                  </Button>
+                </div>
+
+                {/* Add social proof */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="flex items-center justify-center gap-6 text-white/70 text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    <span>Secure Payments</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span>Instant Confirmation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    <span>24/7 Support</span>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ) : (
+              // Enhanced logged-in user experience
+              <motion.div
+                className="space-y-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.4 }}
+              >
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 max-w-md mx-auto">
+                  <p className="text-white/90 mb-4">Welcome back, {user.fullName}!</p>
+                  <div className="flex flex-col gap-3">
+                    <WrapButton
+                      href="/dashboard"
+                      color="success"
+                      variant="globe"
+                      className="shadow-2xl"
+                    >
+                      Go to Dashboard
+                    </WrapButton>
+                    <Button variant="outline" asChild className="border-white/30 text-white hover:bg-white/10">
+                      <Link to="/find">Find New Courts</Link>
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <style jsx="true" global="true">{`
         @keyframes scroll-left {
           0% {
             transform: translateX(0);

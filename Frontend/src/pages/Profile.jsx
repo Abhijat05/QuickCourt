@@ -8,6 +8,7 @@ import { User, Mail, Phone, MapPin, Calendar, Edit, AlertCircle } from 'lucide-r
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Alert, AlertDescription } from '../components/ui/Alert';
+import { authService } from '../services/api';
 
 export default function Profile() {
   const { user } = useAuth();

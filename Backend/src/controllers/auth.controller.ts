@@ -72,11 +72,6 @@ export const login = async (req: Request, res: Response) => {
 
     // Compare password with hash
     const isPasswordValid = await bcrypt.compare(password, user[0].passwordHash);
-    console.log("Password check:", {
-      inputPassword: password,
-      storedHash: user[0].passwordHash,
-      isValid: isPasswordValid
-    });
 
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -88,6 +83,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (user[0].twoFactorEnabled) {
+      // Send OTP for 2FA
       const otpCode = generateOTP();
       await db
         .update(users)

@@ -38,6 +38,7 @@ export const users = pgTable("users", {
   resetToken: varchar("reset_token", { length: 255 }),
   resetTokenExpiry: timestamp("reset_token_expiry"),
   role: varchar("role", { length: 20 }).notNull().default("user"),
+  address: text("address"), // Added address field
   createdAt: timestamp("created_at").defaultNow(),
 });
 

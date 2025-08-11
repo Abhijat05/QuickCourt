@@ -67,6 +67,7 @@ export const getUserProfile = async (req: Request & { user?: any }, res: Respons
       id: users.id,
       fullName: users.fullName,
       email: users.email,
+      address: users.address,
       isVerified: users.isVerified,
       twoFactorEnabled: users.twoFactorEnabled,
       role: users.role,
@@ -89,15 +90,22 @@ export const getUserProfile = async (req: Request & { user?: any }, res: Respons
 // Update user profile
 export const updateUserProfile = async (req: Request & { user?: any }, res: Response) => {
   const userId = req.user.id;
-  const { fullName } = req.body;
+  const { fullName, address } = req.body;
   
   try {
     if (!fullName || fullName.trim() === '') {
       return res.status(400).json({ message: "Full name cannot be empty" });
     }
     
+    const updateData: any = { fullName };
+    
+    // Only add address to update if it's provided
+    if (address !== undefined) {
+      updateData.address = address;
+    }
+    
     await db.update(users)
-      .set({ fullName })
+      .set(updateData)
       .where(eq(users.id, userId));
     
     res.json({ message: "Profile updated successfully" });

@@ -116,15 +116,9 @@ export const adminService = {
 
 export const imageService = {
   getVenueImages: (venueId) => safeApiCall(() => api.get(`/images/venues/${venueId}`)),
-  uploadVenueImage: (venueId, formData) => safeApiCall(() => api.post(`/images/venues/${venueId}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })),
-  uploadCourtImage: (courtId, formData) => safeApiCall(() => api.post(`/images/courts/${courtId}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })),
-  uploadMultipleVenueImages: (venueId, formData) => safeApiCall(() => api.post(`/images/venues/${venueId}/multiple`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })),
+  uploadVenueImage: (venueId, formData) => safeApiCall(() => api.post(`/images/venues/${venueId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }})),
+  uploadCourtImage: (courtId, formData) => safeApiCall(() => api.post(`/images/courts/${courtId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }})),
+  uploadMultipleVenueImages: (venueId, formData) => safeApiCall(() => api.post(`/images/venues/${venueId}/multiple`, formData, { headers: { 'Content-Type': 'multipart/form-data' }})),
 };
 
 export const gameService = {

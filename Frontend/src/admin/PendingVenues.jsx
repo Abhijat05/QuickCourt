@@ -11,6 +11,9 @@ import toast from 'react-hot-toast';
 export default function AdminPendingVenues() {
   const [pendingVenues, setPendingVenues] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [openReject, setOpenReject] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     const fetchPendingVenues = async () => {
@@ -37,6 +40,26 @@ export default function AdminPendingVenues() {
     } catch (err) {
       console.error('Error approving venue:', err);
       toast.error('Failed to approve venue');
+    }
+  };
+
+  const handleRejectVenue = async (venueId) => {
+    if (!rejectReason.trim()) {
+      toast.error('Enter a reason');
+      return;
+    }
+    try {
+      setRejectingId(venueId);
+      await adminService.rejectVenue(venueId, rejectReason.trim());
+      setPendingVenues(prev => prev.filter(v => v.id !== venueId));
+      toast.success('Venue rejected');
+      setOpenReject(null);
+      setRejectReason('');
+    } catch (e) {
+      console.error('Reject failed', e);
+      toast.error(e.response?.data?.message || 'Reject failed');
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -137,14 +160,48 @@ export default function AdminPendingVenues() {
                     </Card>
                     
                     <div className="space-y-3">
-                      <Button variant="success" className="w-full" onClick={() => handleApproveVenue(venue.id)}>
+                      <Button variant="success" className="w-full" onClick={() => handleApproveVenue(venue.id)} disabled={rejectingId === venue.id}>
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Approve Venue
                       </Button>
-                      <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10">
-                        <X className="mr-2 h-4 w-4" />
-                        Reject
-                      </Button>
+                      {openReject === venue.id ? (
+                        <div className="w-full space-y-2">
+                          <textarea
+                            rows={2}
+                            className="w-full text-sm p-2 border rounded-md border-input"
+                            placeholder="Rejection reason (required)"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => handleRejectVenue(venue.id)}
+                              disabled={rejectingId === venue.id}
+                            >
+                              {rejectingId === venue.id ? 'Rejecting...' : 'Confirm'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => { setOpenReject(null); setRejectReason(''); }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="w-full text-destructive hover:bg-destructive/10"
+                          onClick={() => { setOpenReject(venue.id); setRejectReason(''); }}
+                          disabled={rejectingId === venue.id}
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Reject
+                        </Button>
+                      )}
                       <Button variant="ghost" className="w-full" asChild>
                         <Link to={`/venues/${venue.id}`}>View Details</Link>
                       </Button>

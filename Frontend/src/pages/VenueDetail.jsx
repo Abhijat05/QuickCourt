@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { venueService, courtService } from '../services/api';
+import { venueService, courtService, imageService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { 
@@ -37,37 +37,49 @@ export default function VenueDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   
   useEffect(() => {
     const fetchVenueDetails = async () => {
       try {
         setLoading(true);
-        
-        // Get venue details
+
         const venueResponse = await venueService.getVenueById(id);
-        console.log("Venue data received:", venueResponse.data);
-        
-        // Try to fetch courts using the courts service
+
         let courts = [];
         try {
-          // First try the dedicated court service
           const courtsResponse = await courtService.getCourtsByVenue(id);
           courts = courtsResponse.data || [];
-          console.log("Courts data from courtService:", courts);
         } catch (courtError) {
           console.warn("Court service failed, falling back to venue data:", courtError);
-          
-          // If courts data exists directly in venue data, use that
-          if (venueResponse.data.courts) {
-            courts = venueResponse.data.courts;
-            console.log("Using courts from venue data:", courts);
-          }
         }
-        
-        // Combine the data
+
+        // Try image service to enrich image URLs
+        try {
+          const imgRes = await imageService.getVenueImages(id);
+          if (imgRes.data) {
+            const { venue: vImg, courts: courtImgs } = imgRes.data;
+            // Merge venue image
+            if (vImg?.imageUrl) {
+              venueResponse.data.imageUrl = vImg.imageUrl;
+            }
+            // Merge court images by id
+            if (Array.isArray(courtImgs) && courtImgs.length) {
+              courts = courts.map(c =>
+                (courtImgs.find(ci => ci.id === c.id)?.imageUrl
+                  ? { ...c, imageUrl: courtImgs.find(ci => ci.id === c.id).imageUrl }
+                  : c)
+              );
+            }
+          }
+        } catch (imgErr) {
+          console.warn("Image service fetch failed:", imgErr);
+        }
+
         setVenue({
           ...venueResponse.data,
-          courts: courts
+          courts
         });
       } catch (err) {
         console.error("Error fetching venue details:", err);
@@ -78,9 +90,7 @@ export default function VenueDetail() {
     };
 
     fetchVenueDetails();
-    
-    // Refresh venue details periodically (less frequently to reduce API calls)
-    const refreshInterval = setInterval(fetchVenueDetails, 60000); // Every 60 seconds
+    const refreshInterval = setInterval(fetchVenueDetails, 60000);
     return () => clearInterval(refreshInterval);
   }, [id]);
   
@@ -92,6 +102,22 @@ export default function VenueDetail() {
     } catch (error) {
       console.error('Error refreshing venue details:', error);
     }
+  };
+  
+  const handleVenueImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('image', file);
+    setUploading(true);
+    imageService.uploadVenueImage(id, form)
+      .then(res => {
+        if (res.data?.imageUrl) {
+          setVenue(v => ({ ...v, imageUrl: res.data.imageUrl }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setUploading(false));
   };
   
   const renderCourts = () => {
@@ -202,10 +228,16 @@ export default function VenueDetail() {
         {/* Main Content */}
         <div className="lg:col-span-2">
           <div className="relative rounded-xl overflow-hidden mb-6">
-            {venue.images && venue.images.length > 0 ? (
-              <img 
-                src={venue.images[0]} 
-                alt={venue.name} 
+            {venue.imageUrl ? (
+              <img
+                src={venue.imageUrl}
+                alt={venue.name}
+                className="w-full h-64 md:h-80 object-cover"
+              />
+            ) : venue.images && venue.images.length > 0 ? (
+              <img
+                src={venue.images[0]}
+                alt={venue.name}
                 className="w-full h-64 md:h-80 object-cover"
               />
             ) : (
@@ -214,14 +246,26 @@ export default function VenueDetail() {
               </div>
             )}
             <div className="absolute top-4 right-4 flex gap-2">
-              <Badge className="bg-accent text-white">
-                {Array.isArray(venue.sportTypes) ? venue.sportTypes[0] : venue.sportTypes.split(',')[0]}
-              </Badge>
-              {(Array.isArray(venue.sportTypes) ? venue.sportTypes.slice(1) : venue.sportTypes.split(',').slice(1)).map((sport, i) => (
-                <Badge key={i} variant="outline" className="bg-card/80 backdrop-blur-sm">
-                  {sport.trim()}
-                </Badge>
-              ))}
+              {user && user.role === 'owner' && venue.ownerId === user.id && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleVenueImageSelect}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Uploading...' : 'Upload Image'}
+                  </Button>
+                </>
+              )}
+              {/* existing favorite / share buttons if any */}
             </div>
           </div>
 

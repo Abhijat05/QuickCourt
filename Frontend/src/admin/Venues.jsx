@@ -22,7 +22,8 @@ import {
   Grid3x3,
   List,
   Download,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -33,6 +34,9 @@ export default function AdminVenues() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
+  const [rejectingId, setRejectingId] = useState(null);
+  const [showRejectBox, setShowRejectBox] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     fetchVenues();
@@ -67,6 +71,27 @@ export default function AdminVenues() {
     } catch (err) {
       console.error('Error approving venue:', err);
       toast.error('Failed to approve venue');
+    }
+  };
+
+  const handleRejectVenue = async (venueId) => {
+    if (!rejectReason.trim()) {
+      toast.error('Enter a reason');
+      return;
+    }
+    try {
+      setRejectingId(venueId);
+      await adminService.rejectVenue(venueId, rejectReason.trim());
+      // remove from pending
+      setPendingVenues(prev => prev.filter(v => v.id !== venueId));
+      toast.success('Venue rejected');
+      setShowRejectBox(null);
+      setRejectReason('');
+    } catch (e) {
+      console.error('Reject failed', e);
+      toast.error(e.response?.data?.message || 'Reject failed');
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -307,12 +332,25 @@ export default function AdminVenues() {
                       <div className="flex gap-2">
                         <Button 
                           variant="success" 
-                          size="sm"
+                          size="sm" 
                           onClick={() => handleApproveVenue(venue.id)}
+                          disabled={rejectingId === venue.id}
                           className="flex-1"
                         >
                           <CheckCircle className="mr-1 h-4 w-4" />
                           Approve
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setShowRejectBox(showRejectBox === venue.id ? null : venue.id);
+                            setRejectReason('');
+                          }}
+                          disabled={rejectingId === venue.id}
+                        >
+                          <X className="mr-1 h-4 w-4" />
+                          Reject
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <Link to={`/venues/${venue.id}`}>
@@ -320,6 +358,35 @@ export default function AdminVenues() {
                           </Link>
                         </Button>
                       </div>
+                      {showRejectBox === venue.id && (
+                        <div className="mt-3 p-3 border rounded-md bg-muted/40 space-y-2">
+                          <textarea
+                            rows={2}
+                            placeholder="Reason (required)"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            className="w-full text-sm p-2 rounded-md border border-input"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRejectVenue(venue.id)}
+                              disabled={rejectingId === venue.id}
+                              className="flex-1"
+                            >
+                              {rejectingId === venue.id ? 'Rejecting...' : 'Confirm Reject'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => { setShowRejectBox(null); setRejectReason(''); }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>

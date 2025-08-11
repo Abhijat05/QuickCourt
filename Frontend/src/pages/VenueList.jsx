@@ -5,7 +5,14 @@ import { motion } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
-import { MapPin, Search, Filter, Star, DollarSign, Calendar } from 'lucide-react';
+import { MapPin, Search, Filter, Star, DollarSign, Calendar, ImageOff } from 'lucide-react';
+
+const transformVenueImage = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  const base = import.meta.env.VITE_API_BASE_URL || '';
+  return `${base}${url.startsWith('/') ? url : '/' + url}`;
+};
 
 export default function VenueList() {
   const [venues, setVenues] = useState([]);
@@ -56,6 +63,26 @@ export default function VenueList() {
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
+  };
+
+  const renderVenueImage = (venue) => {
+    const src = transformVenueImage(venue.imageUrl || venue.images?.[0]);
+    if (!src) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-1">
+          <ImageOff className="h-6 w-6 opacity-40" />
+          <span className="text-xs opacity-60">No image</span>
+        </div>
+      );
+    }
+    return (
+      <img
+        src={src}
+        alt={venue.name}
+        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://via.placeholder.com/640x360?text=Venue'; }}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+    );
   };
 
   if (loading) {
@@ -131,55 +158,53 @@ export default function VenueList() {
             <motion.div key={venue.id} variants={itemVariants}>
               <Card className="h-full overflow-hidden hover:shadow-md transition-shadow">
                 <Link to={`/venues/${venue.id}`} className="block">
-                  <div className="relative h-48">
-                    {venue.images && venue.images.length > 0 ? (
-                      <img 
-                        src={venue.images[0]} 
-                        alt={venue.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <MapPin className="h-12 w-12 text-muted-foreground opacity-20" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-accent text-white">
+                  <div className="relative aspect-[16/9] bg-muted">
+                    {renderVenueImage(venue)}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+                    <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                      <Badge className="bg-black/60 text-white backdrop-blur">
                         {venue.sportTypes[0]}
                       </Badge>
+                      {venue.sportTypes.length > 1 && (
+                        <Badge variant="outline" className="bg-black/40 text-white border-white/20 backdrop-blur">
+                          +{venue.sportTypes.length - 1}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/55 backdrop-blur px-2 py-1 rounded-md">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-medium text-white">
+                        {venue.averageRating?.toFixed(1) || 'New'}
+                      </span>
                     </div>
                   </div>
                 </Link>
                 
-                <Card.Content className="p-4">
-                  <Link to={`/venues/${venue.id}`} className="block">
-                    <h3 className="text-lg font-semibold mb-1 hover:text-primary transition-colors">
+                <Card.Content className="p-4 flex flex-col">
+                  <Link to={`/venues/${venue.id}`} className="block mb-1">
+                    <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-1">
                       {venue.name}
                     </h3>
                   </Link>
-                  
                   <div className="flex items-center gap-1 mb-2 text-sm">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground truncate">{venue.address}</span>
                   </div>
-                  
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{venue.averageRating?.toFixed(1) || 'New'}</span>
-                      <span className="text-muted-foreground text-sm">({venue.reviewCount || 0})</span>
+                  <div className="mt-auto pt-2">
+                    <div className="flex justify-between items-center mb-3 text-sm">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-4 w-4 text-success" />
+                        <span className="font-medium">${venue.pricePerHour}/hr</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {venue.reviewCount ? `${venue.reviewCount} reviews` : 'No reviews yet'}
+                      </span>
                     </div>
-                    
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-4 w-4 text-success" />
-                      <span className="font-medium">${venue.pricePerHour}/hr</span>
-                    </div>
+                    <Button className="w-full gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Book Now
+                    </Button>
                   </div>
-                  
-                  <Button className="w-full gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Book Now
-                  </Button>
                 </Card.Content>
               </Card>
             </motion.div>

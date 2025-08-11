@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ownerService } from '../../services/api';
+import { ownerService, imageService } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -33,6 +33,7 @@ export default function VenueManagement() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'approved', 'pending'
+  const [uploadingVenueId, setUploadingVenueId] = useState(null);
 
   useEffect(() => {
     const fetchVenues = async () => {
@@ -67,6 +68,20 @@ export default function VenueManagement() {
     approved: venues.filter(v => v.approved).length,
     pending: venues.filter(v => !v.approved).length,
     totalCourts: venues.reduce((sum, venue) => sum + (venue.courts?.length || 0), 0)
+  };
+
+  const handleVenueImageUpload = (venueId, file) => {
+    if (!file) return;
+    const form = new FormData();
+    form.append('image', file);
+    setUploadingVenueId(venueId);
+    imageService.uploadVenueImage(venueId, form)
+      .then(res => {
+        if (res.data?.imageUrl) {
+          setVenues(vs => vs.map(v => v.id === venueId ? { ...v, imageUrl: res.data.imageUrl } : v));
+        }
+      })
+      .finally(() => setUploadingVenueId(null));
   };
 
   if (loading) {
@@ -265,11 +280,11 @@ export default function VenueManagement() {
                   {viewMode === 'grid' ? (
                     // Grid View
                     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 group border-2 hover:border-primary/20">
-                      <div className="relative h-48 bg-muted overflow-hidden">
-                        {venue.images && venue.images.length > 0 ? (
-                          <img 
-                            src={venue.images[0]} 
-                            alt={venue.name} 
+                      <div className="relative h-48 bg-muted overflow-hidden group">
+                        { (venue.imageUrl || (venue.images && venue.images[0])) ? (
+                          <img
+                            src={venue.imageUrl || venue.images[0]}
+                            alt={venue.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
@@ -277,12 +292,24 @@ export default function VenueManagement() {
                             <Building className="h-16 w-16 text-muted-foreground/30" />
                           </div>
                         )}
-                        <div className="absolute top-3 right-3">
-                          <Badge className={venue.approved ? 'bg-success shadow-lg' : 'bg-warning shadow-lg'}>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        <div className="absolute top-2 left-2">
+                          <Badge className={venue.approved ? 'bg-success/90' : 'bg-warning/90'}>
                             {venue.approved ? 'Approved' : 'Pending'}
                           </Badge>
                         </div>
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                        {/* Upload control (owner) */}
+                        <div className="absolute bottom-2 right-2">
+                          <label className="text-xs bg-background/80 backdrop-blur px-2 py-1 rounded-md border cursor-pointer hover:bg-background transition">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleVenueImageUpload(venue.id, e.target.files?.[0])}
+                            />
+                            {uploadingVenueId === venue.id ? 'Uploading...' : 'Change Image'}
+                          </label>
+                        </div>
                       </div>
                       
                       <Card.Content className="p-6">

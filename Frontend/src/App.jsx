@@ -27,10 +27,13 @@ import AdminPendingVenues from './admin/PendingVenues';
 import AdminReports from './admin/Reports';
 import AdminSettings from './admin/Settings';
 import AdminAddVenue from './admin/AddVenue'; // Import the AdminAddVenue component
+import AdminAddCourt from './admin/AddCourt';
 
 // Owner imports
 import VenueManagement from './owner/VenueManagement'; // Import the VenueManagement component
 import AddVenue from './owner/AddVenue'; // Import the AddVenue component
+import OwnerAddCourt from './owner/AddCourt';
+import OwnerVenueBookings from './pages/owner/VenueBookings';
 
 export default function App() {
   return (
@@ -84,10 +87,13 @@ export default function App() {
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute>} />
           <Route path="/admin/venues/new" element={<ProtectedRoute role="admin"><AdminAddVenue /></ProtectedRoute>} />
+          <Route path="/admin/venues/:venueId/courts/new" element={<AdminAddCourt />} />
           
           {/* Owner routes */}
           <Route path="/owner/venues" element={<ProtectedRoute role="owner"><VenueManagement /></ProtectedRoute>} />
           <Route path="/owner/venues/new" element={<ProtectedRoute role="owner"><AddVenue /></ProtectedRoute>} />
+          <Route path="/owner/venues/:venueId/courts/new" element={<OwnerAddCourt />} />
+          <Route path="/owner/venues/:venueId/bookings" element={<OwnerVenueBookings />} />
           
           {/* Catch all route for 404 */}
           <Route path="*" element={<NotFound />} />

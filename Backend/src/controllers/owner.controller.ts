@@ -48,18 +48,22 @@ export const getVenueBookings = async (req: Request & { user?: any }, res: Respo
   const { venueId } = req.params;
   
   try {
-    // First, verify that this venue belongs to the owner
-    const venue = await db.select()
-      .from(venues)
-      .where(and(
-        eq(venues.id, parseInt(venueId)),
-        eq(venues.ownerId, req.user.id)
-      ));
+    const isAdmin = req.user?.role === 'admin';
+
+    // Verify venue (admins can view any venue, owners only their own)
+    const venue = isAdmin
+      ? await db.select().from(venues).where(eq(venues.id, parseInt(venueId)))
+      : await db.select()
+          .from(venues)
+          .where(and(
+            eq(venues.id, parseInt(venueId)),
+            eq(venues.ownerId, req.user.id)
+          ));
     
     if (venue.length === 0) {
       return res.status(403).json({ message: "You don't have access to this venue" });
     }
-    
+
     // Get all courts for this venue
     const venueCourts = await db.select()
       .from(courts)
@@ -84,10 +88,7 @@ export const getVenueBookings = async (req: Request & { user?: any }, res: Respo
       }
     })
     .from(bookings)
-    .where(
-      // Use 'in' to select bookings for any of the courts in this venue
-      inArray(bookings.courtId, courtIds)
-    )
+    .where(inArray(bookings.courtId, courtIds))
     .innerJoin(users, eq(bookings.userId, users.id))
     .innerJoin(courts, eq(bookings.courtId, courts.id));
     

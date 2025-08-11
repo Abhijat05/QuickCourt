@@ -116,7 +116,6 @@ export default function AddVenue() {
 
     setIsSubmitting(true);
     try {
-      // 1) Create the venue (without courts)
       const venueData = {
         name: formData.name,
         description: formData.description,
@@ -125,12 +124,9 @@ export default function AddVenue() {
         sportTypes: formData.sportTypes.split(',').map((t) => t.trim()),
         amenities: formData.amenities ? formData.amenities.split(',').map((a) => a.trim()) : [],
         pricePerHour: parseFloat(formData.pricePerHour),
-        // Optional: as admin, set an explicit ownerId if needed
-        // ownerId: SOME_OWNER_ID
       };
 
       const createVenueFn = isAdmin ? adminService.createVenue : ownerService.createVenue;
-      const createCourtFn = isAdmin ? adminService.createCourt : ownerService.createCourt;
 
       const venueRes = await createVenueFn(venueData);
       console.log('Create venue response:', venueRes?.data);
@@ -145,32 +141,15 @@ export default function AddVenue() {
         throw new Error('Failed to create venue (no id returned)');
       }
 
-      // 2) Create courts for that venue
-      const createRequests = [];
-      for (const template of formData.courts) {
-        const count = template.count && Number(template.count) > 0 ? Number(template.count) : 1;
-        for (let i = 0; i < count; i++) {
-          const courtName = count > 1 ? `${template.name} ${i + 1}` : template.name;
-          createRequests.push(
-            createCourtFn(venueId, {
-              name: courtName,
-              sportType: template.sportType,
-              pricePerHour: parseFloat(template.pricePerHour),
-              openingTime: template.openingTime,
-              closingTime: template.closingTime,
-            })
-          );
-        }
+      toast.success('Venue created. Now add courts.');
+      // Redirect to role-specific Add Courts page
+      if (isAdmin) {
+        navigate(`/admin/venues/${venueId}/courts/new`);
+      } else {
+        navigate(`/owner/venues/${venueId}/courts/new`);
       }
-
-      console.log('Court requests to send:', createRequests.length);
-      await Promise.all(createRequests);
-      console.log('All courts created');
-
-      toast.success(isAdmin ? 'Venue and courts created (admin).' : 'Venue and courts created successfully! Venue will be reviewed by an admin.');
-      navigate('/owner/venues');
     } catch (err) {
-      console.error('Error creating venue or courts:', err);
+      console.error('Error creating venue:', err);
       toast.error(err.response?.data?.message || 'Failed to create venue');
     } finally {
       setIsSubmitting(false);

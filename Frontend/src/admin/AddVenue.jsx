@@ -162,23 +162,31 @@ export default function AdminAddVenue() {
     setIsSubmitting(true);
 
     try {
-      const sanitizedData = {
-        ...formData,
+      const venueData = {
+        name: formData.name,
+        description: formData.description,
+        address: formData.address,
+        location: formData.location,
         sportTypes: formData.sportTypes.split(',').map(type => type.trim()),
-        amenities: formData.amenities ? formData.amenities.split(',').map(amenity => amenity.trim()) : [],
-        courts: formData.courts.map(court => ({
-          name: court.name,
-          sportType: court.sportType,
-          pricePerHour: parseFloat(court.pricePerHour),
-          openingTime: court.openingTime,
-          closingTime: court.closingTime,
-          count: parseInt(court.count)
-        }))
+        amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : [],
+        pricePerHour: parseFloat(formData.pricePerHour),
       };
-      
-      await adminService.createVenue(sanitizedData);
-      toast.success('Venue created successfully!');
-      navigate('/admin/venues');
+
+      const venueRes = await adminService.createVenue(venueData);
+      console.log('Admin create venue response:', venueRes?.data);
+
+      const venueId =
+        venueRes?.data?.venue?.[0]?.id ??
+        venueRes?.data?.venue?.id ??
+        venueRes?.data?.id;
+
+      if (!venueId) {
+        console.error('Could not resolve venueId from response:', venueRes?.data);
+        throw new Error('Failed to create venue (no id returned)');
+      }
+
+      toast.success('Venue created. Now add courts.');
+      navigate(`/admin/venues/${venueId}/courts/new`);
     } catch (err) {
       console.error('Error creating venue:', err);
       toast.error(err.response?.data?.message || 'Failed to create venue');

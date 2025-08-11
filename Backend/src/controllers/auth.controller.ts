@@ -60,34 +60,54 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
 // 3. Login (with 2FA check)
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  console.log("LOGIN body:", req.body);
+    // Get user by email
+    const user = await db.select().from(users).where(eq(users.email, email));
 
-  const user = await db.select().from(users).where(eq(users.email, email));
-  if (!user[0]) return res.status(400).json({ message: "Invalid credentials" });
+    if (user.length === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-  const validPassword = await bcrypt.compare(password, user[0].passwordHash);
-  if (!validPassword)
-    return res.status(400).json({ message: "Invalid credentials" });
+    // Compare password with hash
+    const isPasswordValid = await bcrypt.compare(password, user[0].passwordHash);
+    console.log("Password check:", {
+      inputPassword: password,
+      storedHash: user[0].passwordHash,
+      isValid: isPasswordValid
+    });
 
-  if (user[0].twoFactorEnabled) {
-    const otpCode = generateOTP();
-    await db
-      .update(users)
-      .set({ otpCode, otpExpiry: new Date(Date.now() + 10 * 60 * 1000) })
-      .where(eq(users.email, email));
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-    await sendEmail(
-      email,
-      "QuickCourt Login OTP",
-      `Your login OTP is ${otpCode}`,
-    );
-    return res.json({ message: "2FA OTP sent to email" });
+    // Check if user is verified
+    if (!user[0].isVerified) {
+      return res.status(401).json({ message: "Email not verified" });
+    }
+
+    if (user[0].twoFactorEnabled) {
+      const otpCode = generateOTP();
+      await db
+        .update(users)
+        .set({ otpCode, otpExpiry: new Date(Date.now() + 10 * 60 * 1000) })
+        .where(eq(users.email, email));
+
+      await sendEmail(
+        email,
+        "QuickCourt Login OTP",
+        `Your login OTP is ${otpCode}`,
+      );
+      return res.json({ message: "2FA OTP sent to email" });
+    }
+
+    const token = generateToken({ id: user[0].id, role: user[0].role }); // defaults to 3 days
+    res.json({ token, twoFactorEnabled: user[0].twoFactorEnabled });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-
-  const token = generateToken({ id: user[0].id, role: user[0].role }); // defaults to 3 days
-  res.json({ token, twoFactorEnabled: user[0].twoFactorEnabled });
 };
 
 // 4. Verify 2FA

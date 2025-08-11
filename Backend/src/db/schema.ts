@@ -51,6 +51,7 @@ export const courts = pgTable("courts", {
   pricePerHour: integer("price_per_hour").notNull(),
   openingTime: time("opening_time").notNull(),
   closingTime: time("closing_time").notNull(),
+  imageUrl: varchar("image_url", { length: 500 }),
 });
 
 export const reviews = pgTable("reviews", {
@@ -80,4 +81,5 @@ export const venues = pgTable("venues", {
   pricePerHour: integer("price_per_hour").notNull(),
   approved: boolean("approved").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  imageUrl: varchar("image_url", { length: 500 }),
 });

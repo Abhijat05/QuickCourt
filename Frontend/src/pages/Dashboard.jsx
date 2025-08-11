@@ -28,8 +28,36 @@ export default function Dashboard() {
   
   // For debugging purposes, add this at the beginning of your component:
   useEffect(() => {
-    console.log("Current user data:", user);
+    console.log("Current user data in Dashboard:", user);
+    
+    // Check if we can find role information in localStorage directly
+    try {
+      const storedUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+      console.log("User data from localStorage:", storedUserData);
+      
+      // If we have role in localStorage but not in the user object, we can use it
+      if (storedUserData.role && !user?.role) {
+        console.log("Found role in localStorage:", storedUserData.role);
+      }
+    } catch (e) {
+      console.error("Error checking localStorage:", e);
+    }
   }, [user]);
+
+  // Check if user is admin - more robust check
+  const isAdmin = () => {
+    // Check user object first
+    if (user?.role === 'admin') return true;
+    
+    // As fallback, check localStorage directly
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      return userData.role === 'admin';
+    } catch (e) {
+      console.error("Error checking admin status:", e);
+      return false;
+    }
+  };
 
   // Fetch dashboard data
   useEffect(() => {
@@ -38,9 +66,11 @@ export default function Dashboard() {
         setIsLoading(true);
         setError(null);
         
-        if (user?.role === 'admin') {
+        if (isAdmin()) {
+          console.log("Loading admin dashboard...");
           await fetchAdminData();
         } else {
+          console.log("Loading user dashboard...");
           await fetchUserData();
         }
       } catch (error) {
@@ -56,7 +86,7 @@ export default function Dashboard() {
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [user?.role]);
+  }, [user]);
 
   const fetchUserData = async () => {
     try {
@@ -187,7 +217,7 @@ export default function Dashboard() {
         animate={{ opacity: 1 }}
         transition={{ staggerChildren: 0.1 }}
       >
-        {(user?.role === 'admin') ? (
+        {isAdmin() ? (
           <AdminDashboard adminData={adminData} />
         ) : (
           <UserDashboard 

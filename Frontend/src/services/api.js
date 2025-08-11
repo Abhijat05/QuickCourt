@@ -87,7 +87,9 @@ export const reviewService = {
 
 export const ownerService = {
   getOwnerVenues: () => safeApiCall(() => api.get('/owner/venues')),
+  getVenueById: (venueId) => safeApiCall(() => api.get(`/owner/venues/${venueId}`)),
   createVenue: (data) => safeApiCall(() => api.post('/owner/venues', data)),
+  updateVenue: (venueId, data) => safeApiCall(() => api.put(`/owner/venues/${venueId}`, data)),
   getVenueStats: (venueId) => safeApiCall(() => api.get(`/owner/venues/${venueId}/stats`)),
   getVenueBookings: (venueId) => safeApiCall(() => api.get(`/owner/venues/${venueId}/bookings`)),
   createCourt: (venueId, data) => safeApiCall(() => api.post(`/owner/venues/${venueId}/courts`, data)),
@@ -100,7 +102,8 @@ export const adminService = {
   deleteUser: (userId) => safeApiCall(() => api.delete(`/admin/users/${userId}`)),
   changeUserRole: (data) => safeApiCall(() => api.post('/admin/users/role', data)),
   getPendingVenues: () => safeApiCall(() => api.get('/admin/venues/pending')),
-  approveVenue: (venueId) => safeApiCall(() => api.post(`/admin/venues/${venueId}/approve`)),
+  approveVenue: (venueId) => safeApiCall(() => api.patch(`/admin/venues/${venueId}/approve`)),
+  createVenue: (data) => safeApiCall(() => api.post('/admin/venues', data)),
 };
 
 export const imageService = {

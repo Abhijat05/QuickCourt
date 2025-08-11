@@ -26,6 +26,11 @@ import AdminVenues from './admin/Venues';
 import AdminPendingVenues from './admin/PendingVenues';
 import AdminReports from './admin/Reports';
 import AdminSettings from './admin/Settings';
+import AdminAddVenue from './admin/AddVenue'; // Import the AdminAddVenue component
+
+// Owner imports
+import VenueManagement from './owner/VenueManagement'; // Import the VenueManagement component
+import AddVenue from './owner/AddVenue'; // Import the AddVenue component
 
 export default function App() {
   return (
@@ -78,6 +83,11 @@ export default function App() {
           <Route path="/admin/venues/pending" element={<ProtectedRoute role="admin"><AdminPendingVenues /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute>} />
+          <Route path="/admin/venues/new" element={<ProtectedRoute role="admin"><AdminAddVenue /></ProtectedRoute>} />
+          
+          {/* Owner routes */}
+          <Route path="/owner/venues" element={<ProtectedRoute role="owner"><VenueManagement /></ProtectedRoute>} />
+          <Route path="/owner/venues/new" element={<ProtectedRoute role="owner"><AddVenue /></ProtectedRoute>} />
           
           {/* Catch all route for 404 */}
           <Route path="*" element={<NotFound />} />

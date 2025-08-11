@@ -78,6 +78,12 @@ export default function AdminVenues() {
               )}
             </Link>
           </Button>
+          {/* Add Venue Button for Admin */}
+          <Button asChild variant="success">
+            <Link to="/admin/venues/new">
+              + Add Venue
+            </Link>
+          </Button>
         </div>
       </div>
 

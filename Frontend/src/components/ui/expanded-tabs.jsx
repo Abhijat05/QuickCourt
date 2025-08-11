@@ -2,33 +2,40 @@ import * as React from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useOnClickOutside } from "usehooks-ts"
 
-import { cn } from "../../lib/utils" // Changed from @/lib/utils to relative path
+import { cn } from "../../lib/utils"
 
+// Simplified animation variants that won't cause layout shifts
 const buttonVariants = {
   initial: {
-    gap: 0,
-    paddingLeft: ".5rem",
-    paddingRight: ".5rem",
+    width: "auto",
   },
   animate: (isSelected) => ({
-    gap: isSelected ? ".5rem" : 0,
-    paddingLeft: isSelected ? "1rem" : ".5rem",
-    paddingRight: isSelected ? "1rem" : ".5rem",
+    width: isSelected ? "auto" : "auto",
   }),
 }
 
+// Keep span animation but with improved positioning
 const spanVariants = {
   initial: { width: 0, opacity: 0 },
   animate: { width: "auto", opacity: 1 },
   exit: { width: 0, opacity: 0 },
 }
 
-const transition = { delay: 0.1, type: "spring", bounce: 0, duration: 0.6 }
+// Use a gentler transition with less bounce
+const transition = { 
+  type: "spring", 
+  bounce: 0.1, 
+  duration: 0.5 
+}
 
 export function ExpandedTabs({
   tabs,
   className,
   activeColor = "text-primary",
+  inactiveColor = "text-muted-foreground",
+  hoverColor = "hover:bg-muted",
+  tabStyle = "",
+  separatorStyle = "bg-border",
   onChange
 }) {
   const [selected, setSelected] = React.useState(null)
@@ -45,44 +52,60 @@ export function ExpandedTabs({
   }
 
   const Separator = () => (
-    <div className=" h-[24px] w-[1.2px] bg-border" aria-hidden="true" />
+    <div className={cn("h-[24px] w-[1.2px]", separatorStyle)} aria-hidden="true" />
   )
 
   return (
     <div
       ref={outsideClickRef}
-      className={cn(" flex gap-2 rounded-2xl border bg-background p-1 shadow-sm ", className)}>
+      className={cn(
+        "flex items-center gap-2 rounded-2xl border bg-background p-1 shadow-sm", 
+        className
+      )}
+    >
       {tabs.map((tab, index) => {
         if (tab.type === "separator") {
           return <Separator key={`separator-${index}`} />;
         }
 
         const Icon = tab.icon
+        const isSelected = selected === index
+        
         return (
           <motion.button
             key={tab.title}
             variants={buttonVariants}
-            initial={false}
+            initial="initial"
             animate="animate"
-            custom={selected === index}
+            custom={isSelected}
             onClick={() => handleSelect(index)}
             transition={transition}
+            data-selected={isSelected}
             className={cn(
-              "relative flex items-center rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-300",
-              selected === index
-                ? cn("bg-muted", activeColor)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}>
-            <Icon size={20} />
+              "relative flex items-center justify-center rounded-xl text-sm transition-colors duration-300",
+              "h-8 px-2", // Fixed height with consistent padding
+              isSelected
+                ? cn("", activeColor)
+                : cn(inactiveColor, hoverColor),
+              tabStyle
+            )}
+          >
+            {/* Always keep the icon centered with fixed size */}
+            <div className="flex items-center justify-center w-5 h-5">
+              <Icon size={18} className="flex-shrink-0" />
+            </div>
+            
+            {/* Text container with fixed positioning */}
             <AnimatePresence initial={false}>
-              {selected === index && (
+              {isSelected && (
                 <motion.span
                   variants={spanVariants}
                   initial="initial"
                   animate="animate"
                   exit="exit"
                   transition={transition}
-                  className="overflow-hidden">
+                  className="overflow-hidden whitespace-nowrap ml-1.5 font-medium"
+                >
                   {tab.title}
                 </motion.span>
               )}

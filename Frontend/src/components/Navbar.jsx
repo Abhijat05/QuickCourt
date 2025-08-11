@@ -1,23 +1,29 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 import ThemeToggleButton from './ui/theme-toggle-button';
 import { Avatar, AvatarFallback } from './ui/Avatar';
 import Button from './ui/Button';
+import { ExpandedTabs } from './ui/expanded-tabs';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from './ui/Sheet';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { 
+  Menu, X, ChevronDown, Bell, Search, Calendar, User, 
+  Settings, LogOut, Home, Info, MapPin, Trophy, Clock 
+} from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Handle navbar appearance on scroll
   useEffect(() => {
@@ -32,7 +38,7 @@ export default function Navbar() {
   // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileOpen && !event.target.closest('.profile-menu')) {
+      if (profileOpen && profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setProfileOpen(false);
       }
     };
@@ -43,6 +49,22 @@ export default function Navbar() {
 
   // Check if a link is active
   const isActive = (path) => location.pathname === path;
+  
+  // Define tabs for ExpandedTabs component
+  const navTabs = [
+    { icon: Home, title: "Home", path: "/" },
+    { type: "separator" },
+    ...(user ? [{ icon: Calendar, title: "Dashboard", path: "/dashboard" }] : []),
+    { icon: MapPin, title: "Find Courts", path: "/find" },
+    { type: "separator" },
+    { icon: Info, title: "About", path: "/about" },
+  ];
+  
+  const handleTabChange = (index) => {
+    if (index !== null && navTabs[index].path) {
+      navigate(navTabs[index].path);
+    }
+  };
   
   return (
     <nav className={cn(
@@ -55,12 +77,16 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="font-bold text-xl flex items-center gap-2 group">
+          <Link 
+            to="/" 
+            className="font-bold text-xl flex items-center gap-2 group"
+            aria-label="QuickCourt Home"
+          >
             <div className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
               scrolled ? "bg-primary/10" : "bg-white/10 backdrop-blur-sm"
             )}>
-              <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="Logo" className="w-6 h-6" />
+              <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="" className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
               <span className={cn(
@@ -79,37 +105,44 @@ export default function Navbar() {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
-            {/* Main Navigation Links */}
-            <div className="mr-2 flex items-center bg-background/20 backdrop-blur-md rounded-full p-1 border border-border/30">
-              {[
-                { path: '/', label: 'Home' },
-                { path: '/dashboard', label: 'Dashboard', protected: true },
-                { path: '/about', label: 'About' },
-              ].map(link => !link.protected || user ? (
-                <Link 
-                  key={link.path}
-                  to={link.path}
-                  className={cn(
-                    "px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200",
-                    isActive(link.path)
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:bg-primary/10"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ) : null)}
-            </div>
+          <div className="hidden md:flex items-center space-x-3">
+            {/* Main Navigation Links - Using ExpandedTabs */}
+            <ExpandedTabs 
+              tabs={navTabs}
+              onChange={handleTabChange}
+              className={cn(
+                "mr-3",
+                scrolled ? "bg-background/20" : "bg-white/10"
+              )}
+              activeColor={scrolled ? "text-primary" : "text-white"}
+            />
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "rounded-full hover:bg-background/30",
+                scrolled ? "text-foreground" : "text-white hover:text-white"
+              )}
+              aria-label="Search"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
             
             <ThemeToggleButton variant="circle-blur" start="top-right" />
             
             {user ? (
-              <div className="relative profile-menu">
+              <div className="relative profile-menu" ref={profileMenuRef}>
                 <Button 
                   variant="ghost" 
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 rounded-full hover:bg-background/30 p-1.5 pl-1"
+                  className={cn(
+                    "flex items-center gap-2 rounded-full p-1.5 pl-1 transition-colors",
+                    profileOpen ? "bg-accent/20" : "hover:bg-background/30",
+                    scrolled ? "text-foreground" : "text-white hover:text-white"
+                  )}
+                  aria-expanded={profileOpen}
+                  aria-haspopup="true"
                 >
                   <Avatar className="h-8 w-8 ring-2 ring-primary/20 hover:ring-primary/40 transition-all duration-200">
                     <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-sm">
@@ -117,41 +150,62 @@ export default function Navbar() {
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                    "h-4 w-4 transition-transform duration-200",
+                    scrolled ? "text-muted-foreground" : "text-white/70",
                     profileOpen && "rotate-180"
                   )} />
                 </Button>
                 
                 {/* Profile Dropdown */}
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-lg bg-card shadow-lg ring-1 ring-black/5 border border-border/50 overflow-hidden">
-                    <div className="p-2 border-b border-border/50">
-                      <p className="text-sm font-semibold">My Account</p>
-                      <p className="text-xs text-muted-foreground">User</p>
+                  <div className="absolute right-0 mt-2 w-64 rounded-lg bg-card shadow-lg ring-1 ring-black/5 border border-border/50 overflow-hidden animate-fade-in-up">
+                    <div className="p-4 border-b border-border/50">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
+                            {user.token.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">My Account</p>
+                          <p className="text-xs text-muted-foreground">Manage your settings</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-1">
+                    <div className="p-2">
                       <Link 
                         to="/profile" 
-                        className="block px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+                        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                         onClick={() => setProfileOpen(false)}
                       >
-                        Profile Settings
+                        <User size={16} />
+                        <span>Profile Settings</span>
                       </Link>
                       <Link 
                         to="/bookings" 
-                        className="block px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+                        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                         onClick={() => setProfileOpen(false)}
                       >
-                        My Bookings
+                        <Calendar size={16} />
+                        <span>My Bookings</span>
+                      </Link>
+                      <Link 
+                        to="/history" 
+                        className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <Clock size={16} />
+                        <span>Booking History</span>
                       </Link>
                       <button
                         onClick={() => {
                           logout();
                           setProfileOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-destructive rounded-md hover:bg-destructive/10"
+                        className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-destructive rounded-md hover:bg-destructive/10 transition-colors mt-2 border-t border-border/50 pt-3"
                       >
-                        Logout
+                        <LogOut size={16} />
+                        <span>Logout</span>
                       </button>
                     </div>
                   </div>
@@ -159,10 +213,17 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" asChild className="hover:bg-background/20">
+                <Button 
+                  variant="ghost" 
+                  asChild 
+                  className={cn(
+                    "hover:bg-background/20",
+                    !scrolled && "text-white hover:text-white"
+                  )}
+                >
                   <Link to="/login">Login</Link>
                 </Button>
-                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-shadow">
                   <Link to="/signup">Sign up</Link>
                 </Button>
               </div>
@@ -171,7 +232,20 @@ export default function Navbar() {
           
           {/* Mobile menu */}
           <div className="md:hidden flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "rounded-full",
+                scrolled ? "text-foreground" : "text-white"
+              )}
+              aria-label="Search"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+            
             <ThemeToggleButton variant="circle" start="top-right" />
+            
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button 
@@ -202,19 +276,20 @@ export default function Navbar() {
                   </div>
                   
                   {/* Mobile menu links */}
-                  <div className="p-6 flex-1">
+                  <div className="p-6 flex-1 overflow-y-auto">
                     <div className="space-y-1 mb-6">
                       <h4 className="text-sm font-medium text-muted-foreground mb-2 px-2">Navigation</h4>
                       <Link 
                         to="/" 
                         className={cn(
-                          "block px-3 py-2 rounded-lg text-sm transition-colors",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
                           isActive("/") 
                             ? "bg-primary/10 text-primary font-medium"
                             : "hover:bg-muted"
                         )}
                         onClick={() => setOpen(false)}
                       >
+                        <Home size={16} />
                         Home
                       </Link>
                       
@@ -222,27 +297,43 @@ export default function Navbar() {
                         <Link 
                           to="/dashboard" 
                           className={cn(
-                            "block px-3 py-2 rounded-lg text-sm transition-colors",
+                            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
                             isActive("/dashboard") 
                               ? "bg-primary/10 text-primary font-medium"
                               : "hover:bg-muted"
                           )}
                           onClick={() => setOpen(false)}
                         >
+                          <Calendar size={16} />
                           Dashboard
                         </Link>
                       )}
                       
                       <Link 
+                        to="/find" 
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                          isActive("/find") 
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => setOpen(false)}
+                      >
+                        <MapPin size={16} />
+                        Find Courts
+                      </Link>
+                      
+                      <Link 
                         to="/about" 
                         className={cn(
-                          "block px-3 py-2 rounded-lg text-sm transition-colors",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
                           isActive("/about") 
                             ? "bg-primary/10 text-primary font-medium"
                             : "hover:bg-muted"
                         )}
                         onClick={() => setOpen(false)}
                       >
+                        <Info size={16} />
                         About
                       </Link>
                     </div>
@@ -252,17 +343,27 @@ export default function Navbar() {
                         <h4 className="text-sm font-medium text-muted-foreground mb-2 px-2">Account</h4>
                         <Link 
                           to="/profile" 
-                          className="block px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
                           onClick={() => setOpen(false)}
                         >
+                          <User size={16} />
                           Profile Settings
                         </Link>
                         <Link 
                           to="/bookings" 
-                          className="block px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
                           onClick={() => setOpen(false)}
                         >
+                          <Calendar size={16} />
                           My Bookings
+                        </Link>
+                        <Link 
+                          to="/history" 
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                          onClick={() => setOpen(false)}
+                        >
+                          <Clock size={16} />
+                          Booking History
                         </Link>
                       </div>
                     )}
@@ -277,8 +378,9 @@ export default function Navbar() {
                           setOpen(false);
                         }}
                         variant="outline"
-                        className="w-full justify-center"
+                        className="w-full justify-center gap-2"
                       >
+                        <LogOut size={16} />
                         Logout
                       </Button>
                     ) : (
@@ -286,7 +388,7 @@ export default function Navbar() {
                         <Button variant="outline" asChild>
                           <Link to="/login" onClick={() => setOpen(false)}>Login</Link>
                         </Button>
-                        <Button asChild>
+                        <Button asChild className="shadow-sm">
                           <Link to="/signup" onClick={() => setOpen(false)}>Sign up</Link>
                         </Button>
                       </div>

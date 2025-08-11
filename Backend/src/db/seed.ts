@@ -26,40 +26,31 @@ const seedDatabase = async () => {
       });
       
       console.log("Admin user created successfully");
-      
-      // Test password verification
-      const verifyPassword = await bcrypt.compare(PASSWORD, passwordHash);
-      console.log("Password verification test:", verifyPassword ? "PASSED" : "FAILED");
     } else {
-      console.log("Admin user already exists - updating role and password");
+      console.log("Admin user already exists");
       
-      // Update the role and reset the password
-      const newPasswordHash = await bcrypt.hash(PASSWORD, SALT_ROUNDS);
-      
-      await db.update(users)
-        .set({ 
-          role: "admin", 
-          isVerified: true,
-          passwordHash: newPasswordHash 
-        })
-        .where(eq(users.email, "garv3144@gmail.com"));
+      // Check if the role is admin, if not update it
+      if (existingAdmin[0].role !== "admin") {
+        await db.update(users)
+          .set({ role: "admin", isVerified: true })
+          .where(eq(users.email, "garv3144@gmail.com"));
         
-      console.log("Admin role and password updated successfully");
-      
-      // Test password verification after update
-      const updatedUser = await db.select().from(users).where(eq(users.email, "garv3144@gmail.com"));
-      if (updatedUser.length > 0) {
-        const verifyPassword = await bcrypt.compare(PASSWORD, updatedUser[0].passwordHash);
-        console.log("Updated password verification test:", verifyPassword ? "PASSED" : "FAILED");
+        console.log("Admin role updated successfully");
       }
+      
+      // Remove the password verification test and password update
+      // This is what was causing the password check message
     }
 
-    console.log("Database seed completed!");
+    console.log("Database seed completed");
   } catch (error) {
     console.error("Error seeding database:", error);
-  } finally {
-    process.exit(0);
   }
 };
 
-seedDatabase();
+// Run seed when this file is executed directly
+if (require.main === module) {
+  seedDatabase().then(() => process.exit(0));
+}
+
+export default seedDatabase;

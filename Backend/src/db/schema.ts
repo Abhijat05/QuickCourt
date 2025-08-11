@@ -84,3 +84,32 @@ export const venues = pgTable("venues", {
   createdAt: timestamp("created_at").defaultNow(),
   imageUrl: varchar("image_url", { length: 500 }),
 });
+
+export const publicGames = pgTable("public_games", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id")
+    .notNull()
+    .references(() => bookings.id, { onDelete: "cascade" }),
+  hostId: integer("host_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  maxPlayers: integer("max_players").notNull(),
+  currentPlayers: integer("current_players").default(1),
+  skillLevel: varchar("skill_level", { length: 50 }), // beginner, intermediate, advanced
+  status: varchar("status", { length: 20 }).default("open"), // open, full, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const gameParticipants = pgTable("game_participants", {
+  id: serial("id").primaryKey(),
+  gameId: integer("game_id")
+    .notNull()
+    .references(() => publicGames.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: varchar("status", { length: 20 }).default("confirmed"), // confirmed, cancelled
+  joinedAt: timestamp("joined_at").defaultNow(),
+});

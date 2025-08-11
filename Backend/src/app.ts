@@ -11,6 +11,7 @@ import availabilityRoutes from "./routes/availability.routes";
 import userRoutes from "./routes/user.routes";
 import reviewRoutes from "./routes/review.routes";
 import imageRoutes from "./routes/image.routes";
+import gameRoutes from "./routes/game.routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import path from "path";
 
@@ -41,6 +42,7 @@ app.use("/api/availability", availabilityRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/images", imageRoutes);
+app.use("/api/games", gameRoutes);
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

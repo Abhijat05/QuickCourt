@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
-import { bookings, courts, venues, users } from "../db/schema";
+import { bookings, courts, venues, users, publicGames, gameParticipants } from "../db/schema";
 import { eq, and, or, gte, lte, gt, lt, between } from "drizzle-orm";
 import { sendEmail } from "../utils/email";
 
 // Create a new booking
 export const createBooking = async (req: Request & { user?: any }, res: Response) => {
-  const { courtId, date, startTime, endTime } = req.body; // Remove totalPrice from here
+  const { courtId, date, startTime, endTime, makePublic, gameDetails } = req.body; // Include makePublic and gameDetails
   const userId = req.user.id;
   
   try {
@@ -81,6 +81,31 @@ export const createBooking = async (req: Request & { user?: any }, res: Response
       status: bookings.status,
       createdAt: bookings.createdAt
     });
+    
+    // If user wants to make it a public game
+    if (makePublic && gameDetails) {
+      // Store the returned game object
+      const [newGame] = await db.insert(publicGames)
+        .values({
+          bookingId: newBooking.id,
+          hostId: userId,
+          title: gameDetails.title,
+          description: gameDetails.description || null,
+          maxPlayers: gameDetails.maxPlayers,
+          currentPlayers: 1, // Explicitly set to 1 for the host
+          skillLevel: gameDetails.skillLevel || "intermediate",
+          status: "open"
+        })
+        .returning(); // Add .returning() to get the inserted game
+      
+      // Add the host as the first participant
+      await db.insert(gameParticipants)
+        .values({
+          gameId: newGame.id, // Now newGame is defined
+          userId,
+          status: "confirmed"
+        });
+    }
     
     // Get user information for email
     const user = await db.select().from(users).where(eq(users.id, userId));

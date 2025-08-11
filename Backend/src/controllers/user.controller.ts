@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
-import { bookings, courts, venues, users } from "../db/schema";
-import { eq, and, lt, gte, inArray } from "drizzle-orm";
+import { bookings, courts, venues, users, publicGames, gameParticipants } from "../db/schema";
+import { eq, and, lt, gte, inArray, not } from "drizzle-orm";
 
 export const getUserDashboard = async (req: Request & { user?: any }, res: Response) => {
   const userId = req.user.id;
@@ -80,7 +80,28 @@ export const getUserProfile = async (req: Request & { user?: any }, res: Respons
       return res.status(404).json({ message: "User not found" });
     }
     
-    res.json(userProfile[0]);
+    // Get user's public games
+    const hostedGames = await db.select().from(publicGames).where(eq(publicGames.hostId, userId));
+    
+    // Get participating games (excluding ones they host)
+    const participatingGameIds = await db.select({
+      gameId: gameParticipants.gameId
+    })
+    .from(gameParticipants)
+    .where(and(
+      eq(gameParticipants.userId, userId),
+      not(inArray(gameParticipants.gameId, hostedGames.map(g => g.id)))
+    ));
+    
+    const participatingGames = participatingGameIds.length > 0 
+      ? await db.select().from(publicGames).where(inArray(publicGames.id, participatingGameIds.map(p => p.gameId)))
+      : [];
+    
+    res.json({
+      ...userProfile[0],
+      hostedGames,
+      participatingGames
+    });
   } catch (error) {
     console.error("Error fetching user profile:", error);
     res.status(500).json({ message: "Failed to fetch user profile" });

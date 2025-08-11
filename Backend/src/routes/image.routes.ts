@@ -1,6 +1,7 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import * as imageController from "../controllers/image.controller";
 import { auth, requireRole } from "../middlewares/auth.middleware";
+import multer from "multer";
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.get("/venues/:venueId", imageController.getVenueImages);
 router.use(auth);
 
 // Add error handling middleware for Multer errors
-const handleMulterError = (err, req, res, next) => {
+const handleMulterError = (err: any, req: Request, res: Response, next: NextFunction) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ message: "File too large, maximum size is 5MB" });
   }
@@ -31,9 +32,9 @@ const handleMulterError = (err, req, res, next) => {
 router.post(
   "/venues/:venueId", 
   requireRole(["owner"]), 
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const upload = imageController.upload.single('image');
-    upload(req, res, (err) => {
+    upload(req, res, (err: any) => {
       if (err) {
         return handleMulterError(err, req, res, next);
       }
@@ -46,9 +47,9 @@ router.post(
 router.post(
   "/courts/:courtId", 
   requireRole(["owner"]), 
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const upload = imageController.upload.single('image');
-    upload(req, res, (err) => {
+    upload(req, res, (err: any) => {
       if (err) {
         return handleMulterError(err, req, res, next);
       }
@@ -56,6 +57,22 @@ router.post(
     });
   },
   imageController.uploadCourtImage
+);
+
+// Multiple images upload route
+router.post(
+  "/venues/:venueId/multiple",
+  requireRole(["owner"]),
+  (req: Request, res: Response, next: NextFunction) => {
+    const upload = imageController.upload.array('images', 5); // Allow up to 5 images
+    upload(req, res, (err: any) => {
+      if (err) {
+        return handleMulterError(err, req, res, next);
+      }
+      next();
+    });
+  },
+  imageController.uploadMultipleVenueImages
 );
 
 export default router;

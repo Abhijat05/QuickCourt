@@ -51,10 +51,11 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await authService.login(formData);
+      console.log("Login response:", response.data); // Add this for debugging
 
       if (response.data.token) {
         // Regular login successful
-        login(response.data.token);
+        login(response.data.token, response.data.user);
         toast.success('Login successful!');
         navigate('/dashboard');
       } else {

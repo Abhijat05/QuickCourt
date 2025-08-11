@@ -103,7 +103,15 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const token = generateToken({ id: user[0].id, role: user[0].role }); // defaults to 3 days
-    res.json({ token, twoFactorEnabled: user[0].twoFactorEnabled });
+    return res.json({
+      token: token,
+      user: {
+        id: user[0].id,
+        email: user[0].email,
+        fullName: user[0].fullName,
+        role: user[0].role
+      }
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
@@ -125,8 +133,16 @@ export const verify2FA = async (req: Request, res: Response) => {
     .set({ otpCode: null, otpExpiry: null })
     .where(eq(users.email, email));
 
-  const token = generateToken({ id: user[0].id, role: user[0].role }); // defaults to 3 days
-  res.json({ token });
+  const token = generateToken({ id: user[0].id, role: user[0].role });
+  res.json({ 
+    token,
+    user: {
+      id: user[0].id,
+      email: user[0].email,
+      fullName: user[0].fullName,
+      role: user[0].role
+    } 
+  });
 };
 
 // 5. Forgot Password

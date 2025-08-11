@@ -11,19 +11,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Check if user is logged in
     const token = localStorage.getItem('token');
+    
     if (token) {
-      setUser({ token });
+      // Get user data from localStorage
+      try {
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        setUser({ token, ...userData });
+        console.log("User authenticated with role:", userData.role); // Add this for debugging
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setUser({ token });
+      }
     }
     setLoading(false);
   }, []);
 
-  const login = (token) => {
+  const login = (token, userData) => {
     localStorage.setItem('token', token);
-    setUser({ token });
+    localStorage.setItem('userData', JSON.stringify(userData || {}));
+    setUser({ token, ...userData });
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userData');
     setUser(null);
   };
   

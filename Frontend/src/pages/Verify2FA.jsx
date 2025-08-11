@@ -53,9 +53,15 @@ export default function Verify2FA() {
     setIsLoading(true);
     try {
       const response = await authService.verify2FA({ email, otp });
-      login(response.data.token);
-      toast.success('Login successful!');
-      navigate('/dashboard');
+      
+      // Make sure to store both token and user data
+      if (response.data.token) {
+        login(response.data.token, response.data.user);
+        toast.success('Login successful!');
+        navigate('/dashboard');
+      } else {
+        toast.error('Invalid response from server');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Invalid OTP');
       console.error(error);

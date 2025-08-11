@@ -109,69 +109,70 @@ export default function AddVenue() {
   };
 
   // Update the handleSubmit function
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const validationErrors = validateForm();
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    toast.error('Please fill in all required fields');
-    return;
-  }
-
-  setIsSubmitting(true);
-  try {
-    // Prepare venue data without courts
-    const venueData = {
-      name: formData.name,
-      description: formData.description,
-      address: formData.address,
-      location: formData.location,
-      sportTypes: formData.sportTypes.split(',').map((type) => type.trim()),
-      amenities: formData.amenities ? formData.amenities.split(',').map((amenity) => amenity.trim()) : [],
-      pricePerHour: parseFloat(formData.pricePerHour)
-    };
-    
-    // Step 1: Create the venue first
-    const venueResponse = await ownerService.createVenue(venueData);
-    const venueId = venueResponse.data.venue.id;
-    
-    // Step 2: Add courts using the court API - handle multiple courts for each entry based on count
-    const courtPromises = [];
-    for (const courtTemplate of formData.courts) {
-      // Create the number of courts specified in the count field
-      const count = courtTemplate.count || 1;
-      
-      for (let i = 0; i < count; i++) {
-        const courtName = count > 1 
-          ? `${courtTemplate.name} ${i + 1}` 
-          : courtTemplate.name;
-          
-        const courtData = {
-          name: courtName,
-          sportType: courtTemplate.sportType,
-          pricePerHour: parseFloat(courtTemplate.pricePerHour),
-          openingTime: courtTemplate.openingTime,
-          closingTime: courtTemplate.closingTime
-        };
-        
-        // Use the dedicated court creation API endpoint
-        courtPromises.push(ownerService.createCourt(venueId, courtData));
-      }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error('Please fill in all required fields');
+      return;
     }
-    
-    // Wait for all courts to be created
-    await Promise.all(courtPromises);
-    
-    toast.success('Venue and courts created successfully! Venue will be reviewed by an admin.');
-    navigate('/owner/venues');
-  } catch (err) {
-    console.error('Error creating venue or courts:', err);
-    toast.error(err.response?.data?.message || 'Failed to create venue');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+
+    setIsSubmitting(true);
+    try {
+      // Prepare venue data without courts
+      const venueData = {
+        name: formData.name,
+        description: formData.description,
+        address: formData.address,
+        location: formData.location,
+        sportTypes: formData.sportTypes.split(',').map((type) => type.trim()),
+        amenities: formData.amenities ? formData.amenities.split(',').map((amenity) => amenity.trim()) : [],
+        pricePerHour: parseFloat(formData.pricePerHour)
+      };
+      
+      // Step 1: Create the venue first
+      const venueResponse = await ownerService.createVenue(venueData);
+      const venueId = venueResponse.data.venue.id;
+      
+      // Step 2: Add courts using the court API - handle multiple courts for each entry based on count
+      const courtPromises = [];
+      
+      for (const courtTemplate of formData.courts) {
+        // Create the number of courts specified in the count field
+        const count = parseInt(courtTemplate.count) || 1;
+        
+        for (let i = 0; i < count; i++) {
+          // Generate unique names for each court if count > 1
+          const courtName = count > 1 
+            ? `${courtTemplate.name} ${i + 1}` 
+            : courtTemplate.name;
+            
+          const courtData = {
+            name: courtName,
+            sportType: courtTemplate.sportType,
+            pricePerHour: parseFloat(courtTemplate.pricePerHour),
+            openingTime: courtTemplate.openingTime,
+            closingTime: courtTemplate.closingTime
+          };
+          
+          // Use the dedicated court creation API endpoint
+          courtPromises.push(ownerService.createCourt(venueId, courtData));
+        }
+      }
+      
+      // Wait for all courts to be created
+      await Promise.all(courtPromises);
+      
+      toast.success('Venue and courts created successfully! Venue will be reviewed by an admin.');
+      navigate('/owner/venues');
+    } catch (err) {
+      console.error('Error creating venue or courts:', err);
+      toast.error(err.response?.data?.message || 'Failed to create venue');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <motion.div

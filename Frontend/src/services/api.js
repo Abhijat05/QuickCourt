@@ -102,8 +102,12 @@ export const adminService = {
   deleteUser: (userId) => safeApiCall(() => api.delete(`/admin/users/${userId}`)),
   changeUserRole: (data) => safeApiCall(() => api.post('/admin/users/role', data)),
   getPendingVenues: () => safeApiCall(() => api.get('/admin/venues/pending')),
-  approveVenue: (venueId) => safeApiCall(() => api.post(`/admin/venues/${venueId}/approve`)),
-  createVenue: (data) => safeApiCall(() => api.post('/owner/venues', data)),
+  approveVenue: (venueId) => safeApiCall(() => api.patch(`/admin/venues/${venueId}/approve`)),
+  // Create venue (without courts)
+  createVenue: (venueData) => safeApiCall(() => api.post('/owner/venues', venueData)),
+  
+  // Create court for a venue
+  createCourt: (venueId, courtData) => safeApiCall(() => api.post(`/owner/venues/${venueId}/courts`, courtData)),
 };
 
 export const imageService = {

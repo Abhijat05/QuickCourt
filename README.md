@@ -2,7 +2,7 @@
 
 ## Team Details
 
-### Team NUmber
+### Team Number
 76
 
 ### Team Name
@@ -14,7 +14,7 @@ Code 01
 
 ### Tech Stack
 - **Frontend**: React, TailwindCSS, Vite
-- **Backend**: Node.js, Express.js
+- **Backend**: Node.js, Express.js, TypeScript
 - **Database**: Postgres
 - **Build Tools**: Vite
 - **Linting**: ESLint

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
-import { users, venues } from "../db/schema";
+import { users, venues, courts } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 // Get all users
@@ -137,5 +137,82 @@ export const deleteUser = async (req: Request & { user?: any }, res: Response) =
       message: "Failed to delete user", 
       error: error instanceof Error ? error.message : "Unknown error" 
     });
+  }
+};
+
+// Create a venue as admin
+export const createVenue = async (req: Request & { user?: any }, res: Response) => {
+  const { name, description, address, location, sportTypes, amenities, pricePerHour, ownerId } = req.body;
+  
+  try {
+    // Admin can specify an owner, or default to the admin user
+    const targetOwnerId = ownerId || req.user.id;
+    
+    // Verify that the target owner exists
+    const owner = await db.select().from(users).where(eq(users.id, targetOwnerId));
+    if (owner.length === 0) {
+      return res.status(400).json({ message: "Specified owner does not exist" });
+    }
+    
+    // Create venue with automatic approval since admin is creating it
+    const [newVenue] = await db.insert(venues)
+      .values({
+        ownerId: targetOwnerId,
+        name,
+        description,
+        address,
+        location,
+        sportTypes,
+        amenities,
+        pricePerHour: parseFloat(pricePerHour),
+        approved: true, // Auto-approve venues created by admin
+        createdAt: new Date()
+      })
+      .returning();
+    
+    res.status(201).json({ 
+      message: "Venue created successfully.",
+      venue: newVenue 
+    });
+  } catch (error) {
+    console.error("Error in createVenue:", error);
+    res.status(500).json({ message: "Failed to create venue" });
+  }
+};
+
+// Create a court as admin
+export const createCourt = async (req: Request & { user?: any }, res: Response) => {
+  const { venueId } = req.params;
+  const { name, sportType, pricePerHour, openingTime, closingTime } = req.body;
+  
+  try {
+    // First verify venue exists
+    const venue = await db.select()
+      .from(venues)
+      .where(eq(venues.id, parseInt(venueId)));
+    
+    if (venue.length === 0) {
+      return res.status(404).json({ message: "Venue not found" });
+    }
+    
+    // Create court with admin privileges (no ownership check needed)
+    const [newCourt] = await db.insert(courts)
+      .values({
+        venueId: parseInt(venueId),
+        name,
+        sportType,
+        pricePerHour: parseFloat(pricePerHour),
+        openingTime: openingTime || "08:00",
+        closingTime: closingTime || "22:00",
+      })
+      .returning();
+    
+    res.status(201).json({
+      message: "Court created successfully",
+      court: newCourt
+    });
+  } catch (error) {
+    console.error("Error creating court:", error);
+    res.status(500).json({ message: "Failed to create court" });
   }
 };

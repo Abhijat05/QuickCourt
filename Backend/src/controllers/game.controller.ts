@@ -503,3 +503,32 @@ export const getGameParticipants = async (req: Request, res: Response) => {
   }
 };
 
+// Close (lock) a public game (host or admin)
+export const closePublicGame = async (req: Request & { user?: any }, res: Response) => {
+  const { gameId } = req.params;
+  try {
+    const game = await db.select()
+      .from(publicGames)
+      .where(eq(publicGames.id, parseInt(gameId)));
+    
+    if (game.length === 0) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+    const g = game[0];
+    if (g.hostId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Not authorized to close this game" });
+    }
+    if (g.status === 'closed') {
+      return res.json({ message: "Game already closed" });
+    }
+    await db.update(publicGames)
+      .set({ status: "closed" })
+      .where(eq(publicGames.id, parseInt(gameId)));
+    
+    return res.json({ message: "Game closed successfully" });
+  } catch (error) {
+    console.error("Error closing game:", error);
+    res.status(500).json({ message: "Failed to close game" });
+  }
+};
+

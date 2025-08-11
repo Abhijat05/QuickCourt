@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { venueService } from '../services/api';
+import { venueService, courtService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { 
@@ -41,17 +41,47 @@ export default function VenueDetail() {
   useEffect(() => {
     const fetchVenueDetails = async () => {
       try {
-        const response = await venueService.getVenueById(id);
-        setVenue(response.data);
+        setLoading(true);
+        
+        // Get venue details
+        const venueResponse = await venueService.getVenueById(id);
+        console.log("Venue data received:", venueResponse.data);
+        
+        // Try to fetch courts using the courts service
+        let courts = [];
+        try {
+          // First try the dedicated court service
+          const courtsResponse = await courtService.getCourtsByVenue(id);
+          courts = courtsResponse.data || [];
+          console.log("Courts data from courtService:", courts);
+        } catch (courtError) {
+          console.warn("Court service failed, falling back to venue data:", courtError);
+          
+          // If courts data exists directly in venue data, use that
+          if (venueResponse.data.courts) {
+            courts = venueResponse.data.courts;
+            console.log("Using courts from venue data:", courts);
+          }
+        }
+        
+        // Combine the data
+        setVenue({
+          ...venueResponse.data,
+          courts: courts
+        });
       } catch (err) {
+        console.error("Error fetching venue details:", err);
         setError('Failed to load venue details');
-        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchVenueDetails();
+    
+    // Refresh venue details periodically (less frequently to reduce API calls)
+    const refreshInterval = setInterval(fetchVenueDetails, 60000); // Every 60 seconds
+    return () => clearInterval(refreshInterval);
   }, [id]);
   
   const handleReviewSubmitted = async () => {
@@ -62,6 +92,66 @@ export default function VenueDetail() {
     } catch (error) {
       console.error('Error refreshing venue details:', error);
     }
+  };
+  
+  const renderCourts = () => {
+    if (!venue || !venue.courts || venue.courts.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="font-medium mb-1">No Courts Available</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            This venue doesn't have any courts registered yet.
+          </p>
+          {user?.role === 'admin' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              className="mx-auto"
+            >
+              <Link to={`/admin/venues/${id}/courts/new`}>
+                Add Court
+              </Link>
+            </Button>
+          )}
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        {venue.courts.map(court => (
+          <Card key={court.id} className="overflow-hidden border-border/50 hover:shadow-md transition-shadow">
+            <div className="bg-primary/5 p-4">
+              <h3 className="font-medium text-lg">{court.name}</h3>
+              <Badge variant="outline" className="mt-1">
+                {court.sportType}
+              </Badge>
+            </div>
+            <Card.Content className="p-4 pt-3">
+              <div className="flex justify-between mt-2">
+                <span className="flex items-center">
+                  <DollarSign className="h-4 w-4 mr-1 text-muted-foreground" />
+                  ${court.pricePerHour}/hr
+                </span>
+                <span className="flex items-center">
+                  <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                  {court.openingTime || venue.openingTime} - {court.closingTime || venue.closingTime}
+                </span>
+              </div>
+              <div className="mt-4 pt-3 border-t border-border/50">
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to={`/booking/${venue.id}?courtId=${court.id}`}>
+                    <Calendar className="mr-2 h-4 w-4" /> Book this court
+                  </Link>
+                </Button>
+              </div>
+            </Card.Content>
+          </Card>
+        ))}
+      </div>
+    );
   };
   
   if (loading) {
@@ -201,6 +291,12 @@ export default function VenueDetail() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Render courts information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Courts</h3>
+                {renderCourts()}
               </div>
             </>
           )}

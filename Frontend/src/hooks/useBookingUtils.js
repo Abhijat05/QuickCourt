@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import Badge from '../components/ui/Badge';
+import { CheckCircle, XCircle, Clock, CalendarClock } from 'lucide-react'; // added icons
 
 export function useBookingUtils() {
   // Format a booking date to readable format
@@ -73,11 +74,41 @@ export function useBookingUtils() {
     });
   };
 
+  // NEW: derive a normalized booking status used by panels
+  const getBookingStatus = (booking) => {
+    // Prefer explicit backend status if present
+    if (booking.status === 'cancelled') return 'cancelled';
+    if (booking.status === 'completed') return 'completed';
+    if (booking.status === 'confirmed') return 'upcoming';
+    // Fallback to time-based classification
+    const type = getBookingType(booking); // existing helper
+    if (type === 'past') return 'completed';
+    if (type === 'active') return 'upcoming';
+    return type; // 'upcoming' already or other
+  };
+
+  // NEW: status icon helper (optional)
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed':
+        return createElement(CheckCircle, { className: 'w-4 h-4 text-success' });
+      case 'cancelled':
+        return createElement(XCircle, { className: 'w-4 h-4 text-destructive' });
+      case 'upcoming':
+      case 'confirmed':
+        return createElement(CalendarClock, { className: 'w-4 h-4 text-primary' });
+      default:
+        return createElement(Clock, { className: 'w-4 h-4 text-muted-foreground' });
+    }
+  };
+
   return {
     formatBookingDate,
     formatTime,
     getStatusBadge,
     getBookingType,
-    filterBookings
+    filterBookings,
+    getBookingStatus, // added
+    getStatusIcon     // added
   };
 }

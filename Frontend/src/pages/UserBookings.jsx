@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '../components/ui/Breadcrumb';
 import { Calendar, Clock, MapPin, ChevronRight, Search, Filter } from 'lucide-react';
+import { bookingService } from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function UserBookings() {
   const { user } = useAuth();
@@ -15,62 +17,32 @@ export default function UserBookings() {
   const [filter, setFilter] = useState('all'); // all, upcoming, past, cancelled
 
   useEffect(() => {
-    // Simulate loading bookings data
-    setTimeout(() => {
-      // Mock bookings data
-      const mockBookings = [
-        {
-          id: 1,
-          courtName: "Downtown Tennis Club - Court 2",
-          venueName: "Downtown Tennis Club",
-          date: "2023-06-15",
-          startTime: "10:00",
-          endTime: "12:00",
-          sport: "Tennis",
-          price: 25.00,
-          status: "confirmed"
-        },
-        {
-          id: 2,
-          courtName: "City Basketball Arena - Court A",
-          venueName: "City Basketball Arena",
-          date: "2023-06-20",
-          startTime: "16:00",
-          endTime: "18:00",
-          sport: "Basketball",
-          price: 30.00,
-          status: "confirmed"
-        },
-        {
-          id: 3,
-          courtName: "Sportsville Badminton - Court 4",
-          venueName: "Sportsville",
-          date: "2023-05-30",
-          startTime: "14:00",
-          endTime: "16:00",
-          sport: "Badminton",
-          price: 20.00,
-          status: "completed"
-        },
-        {
-          id: 4,
-          courtName: "Riverside Courts - Tennis Court 1",
-          venueName: "Riverside Courts",
-          date: "2023-06-02",
-          startTime: "09:00",
-          endTime: "11:00",
-          sport: "Tennis",
-          price: 28.00,
-          status: "cancelled"
-        }
-      ];
-      
-      setBookings(mockBookings);
-      setIsLoading(false);
-    }, 1000);
-
-    // In a real app, you would fetch the user's bookings
-    // Example: bookingService.getUserBookings().then(data => setBookings(data));
+    const fetchBookings = async () => {
+      try {
+        setIsLoading(true);
+        const res = await bookingService.getAllUserBookings();
+        const data = Array.isArray(res.data) ? res.data : [];
+        const mapped = data.map(b => ({
+          id: b.id,
+          courtName: b.courtName || 'Court',
+          venueName: b.venueName || '',
+          date: b.date,
+          startTime: b.startTime,
+          endTime: b.endTime,
+          status: b.status,
+          price: Number(b.calculatedPrice ?? 0),
+          sport: b.sportType, // optional if backend sends it
+        }));
+        setBookings(mapped);
+      } catch (err) {
+        console.error('Error loading bookings:', err);
+        toast.error(err.response?.data?.message || 'Failed to load bookings');
+        setBookings([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchBookings();
   }, []);
 
   const filteredBookings = bookings.filter(booking => {
@@ -114,6 +86,17 @@ export default function UserBookings() {
   const formatDate = (dateString) => {
     const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  const handleCancel = async (bookingId) => {
+    try {
+      await bookingService.cancelBooking(bookingId);
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
+      toast.success('Booking cancelled');
+    } catch (err) {
+      console.error('Cancel failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to cancel booking');
+    }
   };
 
   if (isLoading) {
@@ -228,7 +211,7 @@ export default function UserBookings() {
                     </div>
                     <div className="flex gap-2 w-full md:w-auto">
                       {booking.status === 'confirmed' && (
-                        <Button variant="destructive" size="sm" className="w-full md:w-auto">Cancel</Button>
+                        <Button variant="destructive" size="sm" className="w-full md:w-auto" onClick={() => handleCancel(booking.id)}>Cancel</Button>
                       )}
                       <Button variant="outline" size="sm" className="gap-1 w-full md:w-auto">
                         Details

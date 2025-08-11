@@ -9,7 +9,6 @@ import {
   Building, 
   MapPin, 
   Plus, 
-  Settings, 
   ChevronRight, 
   Calendar,
   Eye,
@@ -323,14 +322,13 @@ export default function VenueManagement() {
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link to={`/owner/venues/${venue.id}`}>
-                              <Settings className="mr-1 h-4 w-4" />
-                              Manage
-                            </Link>
-                          </Button>
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <div className="mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-center"
+                            asChild
+                          >
                             <Link to={`/owner/venues/${venue.id}/bookings`}>
                               <Calendar className="mr-1 h-4 w-4" />
                               Bookings
@@ -400,12 +398,6 @@ export default function VenueManagement() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" asChild>
-                                  <Link to={`/owner/venues/${venue.id}`}>
-                                    <Settings className="mr-1 h-4 w-4" />
-                                    Manage
-                                  </Link>
-                                </Button>
                                 <Button variant="outline" size="sm" asChild>
                                   <Link to={`/owner/venues/${venue.id}/bookings`}>
                                     <Calendar className="mr-1 h-4 w-4" />

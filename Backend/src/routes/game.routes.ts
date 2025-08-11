@@ -16,5 +16,6 @@ router.post("/:gameId/leave", gameController.leavePublicGame);
 router.get("/user/participating", gameController.getUserGames);
 router.get("/:gameId/participants", gameController.getGameParticipants);
 router.get("/:gameId/check-participants", gameController.checkGameParticipants);
+router.patch("/:gameId/close", gameController.closePublicGame);
 
 export default router;

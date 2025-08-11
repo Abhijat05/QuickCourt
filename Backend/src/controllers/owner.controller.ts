@@ -19,26 +19,32 @@ export const getOwnerVenues = async (req: Request & { user?: any }, res: Respons
 // Create a new venue
 export const createVenue = async (req: Request & { user?: any }, res: Response) => {
   const { name, description, address, location, sportTypes, amenities, pricePerHour } = req.body;
-  
+
   try {
-    const [newVenue] = await db.insert(venues)
-      .values({
-        ownerId: req.user.id,
-        name,
-        description,
-        address,
-        location,
-        sportTypes,
-        amenities,
-        pricePerHour,
-      })
+    const normalizeCSV = (v: any) =>
+      Array.isArray(v) ? v.join(',') : (typeof v === 'string' ? v : '');
+
+    const venueData: any = {
+      ownerId: req.user.id,
+      name,
+      description: description || null,
+      address,
+      location,
+      sportTypes: normalizeCSV(sportTypes),
+      amenities: normalizeCSV(amenities),
+      pricePerHour: String(pricePerHour),
+    };
+
+    const newVenue = await db.insert(venues)
+      .values(venueData)
       .returning();
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: "Venue created successfully. Pending approval.",
-      venue: newVenue 
+      venue: newVenue
     });
   } catch (error) {
+    console.error("Error creating venue:", error);
     res.status(500).json({ message: "Failed to create venue" });
   }
 };

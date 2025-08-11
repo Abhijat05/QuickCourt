@@ -30,10 +30,14 @@ import AdminAddVenue from './admin/AddVenue'; // Import the AdminAddVenue compon
 import AdminAddCourt from './admin/AddCourt';
 
 // Owner imports
-import VenueManagement from './owner/VenueManagement'; // Import the VenueManagement component
-import AddVenue from './owner/AddVenue'; // Import the AddVenue component
-import OwnerAddCourt from './owner/AddCourt';
+import VenueManagement from './pages/owner/VenueManagement'; // Use the owner page component
+import AddVenue from './pages/owner/AddVenue';
+import OwnerAddCourt from './owner/AddCourt'; // reuse existing court form
 import OwnerVenueBookings from './pages/owner/VenueBookings';
+
+// Public game imports
+import PublicGames from './pages/games/PublicGames';
+import PublicGameDetail from './pages/games/PublicGameDetail';
 
 export default function App() {
   return (
@@ -78,6 +82,12 @@ export default function App() {
               <BookingHistory />
             </ProtectedRoute>
           } />
+          {/* Public (authenticated) route for venue bookings for all roles */}
+          <Route path="/venues/:venueId/bookings" element={
+            <ProtectedRoute>
+              <OwnerVenueBookings />
+            </ProtectedRoute>
+          } />
           
           {/* Admin routes */}
           <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
@@ -87,13 +97,31 @@ export default function App() {
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute>} />
           <Route path="/admin/venues/new" element={<ProtectedRoute role="admin"><AdminAddVenue /></ProtectedRoute>} />
-          <Route path="/admin/venues/:venueId/courts/new" element={<AdminAddCourt />} />
+          <Route path="/admin/venues/:venueId/courts/new" element={<ProtectedRoute role="admin"><AdminAddCourt /></ProtectedRoute>} />
+          {/* Admin can also view venue bookings */}
+          <Route path="/admin/venues/:venueId/bookings" element={<ProtectedRoute role="admin"><OwnerVenueBookings /></ProtectedRoute>} />
           
           {/* Owner routes */}
-          <Route path="/owner/venues" element={<ProtectedRoute role="owner"><VenueManagement /></ProtectedRoute>} />
-          <Route path="/owner/venues/new" element={<ProtectedRoute role="owner"><AddVenue /></ProtectedRoute>} />
-          <Route path="/owner/venues/:venueId/courts/new" element={<OwnerAddCourt />} />
-          <Route path="/owner/venues/:venueId/bookings" element={<OwnerVenueBookings />} />
+          <Route path="/owner/venues" element={
+            <ProtectedRoute roles={['owner','admin']}>
+              <VenueManagement /> {/* uses pages/owner/VenueManagement.jsx */}
+            </ProtectedRoute>
+          } />
+          <Route path="/owner/venues/new" element={
+            <ProtectedRoute roles={['owner','admin']}>
+              <AddVenue />
+            </ProtectedRoute>
+          } />
+          <Route path="/owner/venues/:venueId/courts/new" element={
+            <ProtectedRoute roles={['owner','admin']}>
+              <OwnerAddCourt />
+            </ProtectedRoute>
+          } />
+          <Route path="/owner/venues/:venueId/bookings" element={<ProtectedRoute role="owner"><OwnerVenueBookings /></ProtectedRoute>} />
+          
+          {/* Public game routes */}
+          <Route path="/games" element={<PublicGames />} />
+          <Route path="/games/:gameId" element={<PublicGameDetail />} />
           
           {/* Catch all route for 404 */}
           <Route path="*" element={<NotFound />} />

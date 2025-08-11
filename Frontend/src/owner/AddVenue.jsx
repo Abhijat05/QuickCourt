@@ -100,7 +100,6 @@ export default function AddVenue() {
     if (!formData.location.trim()) newErrors.location = 'Location is required.';
     if (!formData.sportTypes.trim()) newErrors.sportTypes = 'Sport types are required.';
     if (!formData.description.trim()) newErrors.description = 'Description is required.';
-    if (formData.courts.length === 0) newErrors.courts = 'At least one court is required.';
     return newErrors;
   };
 
@@ -121,8 +120,9 @@ export default function AddVenue() {
         description: formData.description,
         address: formData.address,
         location: formData.location,
-        sportTypes: formData.sportTypes.split(',').map((t) => t.trim()),
-        amenities: formData.amenities ? formData.amenities.split(',').map((a) => a.trim()) : [],
+        // strings, not arrays
+        sportTypes: formData.sportTypes,
+        amenities: formData.amenities || '',
         pricePerHour: parseFloat(formData.pricePerHour),
       };
 

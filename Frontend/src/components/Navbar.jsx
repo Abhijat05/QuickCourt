@@ -13,7 +13,8 @@ import {
 } from './ui/Sheet';
 import { 
   Menu, X, ChevronDown, Bell, Search, Calendar, User, 
-  Settings, LogOut, Home, Info, MapPin, Trophy, Clock 
+  Settings, LogOut, Home, Info, MapPin, Trophy, Clock,
+  Building, Users // added Users for Public Games tab
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -55,6 +56,15 @@ export default function Navbar() {
     { icon: Home, title: "Home", path: "/" },
     { type: "separator" },
     ...(user ? [{ icon: Calendar, title: "Dashboard", path: "/dashboard" }] : []),
+    // Public Games tab (always visible)
+    { icon: Users, title: "Public Games", path: "/games" },
+    ...(user && (user.role === 'admin' || user.role === 'owner')
+      ? [{ 
+          icon: Building, 
+          title: "My Venues", 
+          path: user.role === 'admin' ? '/admin/venues' : '/owner/venues' 
+        }]
+      : []),
     { icon: MapPin, title: "Find Courts", path: "/find" },
     { type: "separator" },
     { icon: Info, title: "About", path: "/about" },
@@ -306,6 +316,37 @@ export default function Navbar() {
                         >
                           <Calendar size={16} />
                           Dashboard
+                        </Link>
+                      )}
+                      
+                      {/* Public Games tab (always visible) */}
+                      <Link 
+                        to="/games" 
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                          isActive("/games") 
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => setOpen(false)}
+                      >
+                        <Users size={16} />
+                        Public Games
+                      </Link>
+                      
+                      {user && (user.role === 'admin' || user.role === 'owner') && (
+                        <Link 
+                          to={user.role === 'admin' ? "/admin/venues" : "/owner/venues"}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                            isActive(user.role === 'admin' ? "/admin/venues" : "/owner/venues")
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "hover:bg-muted"
+                          )}
+                          onClick={() => setOpen(false)}
+                        >
+                          <Building size={16} />
+                          My Venues
                         </Link>
                       )}
                       

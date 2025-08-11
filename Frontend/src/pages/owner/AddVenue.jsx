@@ -126,8 +126,9 @@ export default function AddVenue() {
         description: formData.description,
         address: formData.address,
         location: formData.location,
-        sportTypes: formData.sportTypes.split(',').map((type) => type.trim()),
-        amenities: formData.amenities ? formData.amenities.split(',').map((amenity) => amenity.trim()) : [],
+        // strings, not arrays
+        sportTypes: formData.sportTypes,
+        amenities: formData.amenities || '',
         pricePerHour: parseFloat(formData.pricePerHour)
       };
       

@@ -69,6 +69,12 @@ export const venueService = {
   searchVenues: (params) => safeApiCall(() => api.get('/venues/search', { params })),
 };
 
+// Add this export so VenueDetail can import it
+export const courtService = {
+  getCourtsByVenue: (venueId) => safeApiCall(() => api.get(`/courts/venue/${venueId}`)),
+  getCourtById: (courtId) => safeApiCall(() => api.get(`/courts/${courtId}`)),
+};
+
 export const bookingService = {
   createBooking: (data) => safeApiCall(() => api.post('/bookings', data)),
   getAllUserBookings: () => safeApiCall(() => api.get('/bookings/user')),
@@ -130,6 +136,8 @@ export const gameService = {
   getUserGames: () => safeApiCall(() => api.get('/games/user/participating')),
   getGameParticipants: (gameId) => safeApiCall(() => api.get(`/games/${gameId}/participants`)),
   checkGameParticipants: (gameId) => safeApiCall(() => api.get(`/games/${gameId}/check-participants`)),
+  // FIX: correct path (remove public-games)
+  closePublicGame: (gameId) => safeApiCall(() => api.patch(`/games/${gameId}/close`)),
 };
 
 export default api;

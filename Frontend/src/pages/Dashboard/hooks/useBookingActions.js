@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { authService, userService } from '../../../services/api';
+import { authService, bookingService } from '../../../services/api';
 
 export function useBookingActions(
   twoFactorEnabled, 
@@ -30,9 +30,8 @@ export function useBookingActions(
 
   const handleCancelBooking = useCallback(async (bookingId) => {
     try {
-      // Try to call the real service
       try {
-        await userService.cancelBooking(bookingId);
+        await bookingService.cancelBooking(bookingId);
       } catch (error) {
         console.warn('Booking cancellation API failed, using mock update');
       }

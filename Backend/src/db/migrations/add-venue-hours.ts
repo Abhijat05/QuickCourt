@@ -3,18 +3,18 @@ import { db } from "../../config/db";
 
 async function runMigration() {
   try {
-    console.log("Running migration: Adding opening and closing time to venues");
+    console.log("Running migration: Adding opening and closing time fields to venues table");
     
     // Add opening_time column to venues table
     await db.execute(sql`
       ALTER TABLE venues 
-      ADD COLUMN IF NOT EXISTS opening_time VARCHAR(10) NOT NULL DEFAULT '08:00'
+      ADD COLUMN IF NOT EXISTS opening_time VARCHAR(10) DEFAULT '08:00'
     `);
     
     // Add closing_time column to venues table
     await db.execute(sql`
       ALTER TABLE venues 
-      ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10) NOT NULL DEFAULT '22:00'
+      ADD COLUMN IF NOT EXISTS closing_time VARCHAR(10) DEFAULT '22:00'
     `);
     
     console.log("Migration completed successfully");

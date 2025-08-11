@@ -9,6 +9,7 @@ import {
   varchar,
   smallint,
   text,
+  numeric,
 } from "drizzle-orm/pg-core";
 
 export const bookings = pgTable("bookings", {
@@ -71,19 +72,21 @@ export const reviews = pgTable("reviews", {
 
 export const venues = pgTable("venues", {
   id: serial("id").primaryKey(),
-  ownerId: integer("owner_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  name: varchar("name", { length: 255 }).notNull(),
+  ownerId: integer("owner_id").references(() => users.id),
+  name: text("name").notNull(),
   description: text("description"),
   address: text("address").notNull(),
-  location: varchar("location", { length: 255 }), // city, short location
-  sportTypes: varchar("sport_types", { length: 255 }), // CSV or JSON
-  amenities: text("amenities"), // CSV or JSON
-  pricePerHour: integer("price_per_hour").notNull(),
+  location: text("location").notNull(),
+  sportTypes: text("sport_types"),
+  amenities: text("amenities"),
+  pricePerHour: text("price_per_hour").notNull(), // Changed to text to match existing schema
   approved: boolean("approved").default(false),
+  rejected: boolean("rejected").default(false),
+  rejectionReason: text("rejection_reason"),
+  openingTime: varchar("opening_time", { length: 10 }).default("08:00"),
+  closingTime: varchar("closing_time", { length: 10 }).default("22:00"),
   createdAt: timestamp("created_at").defaultNow(),
-  imageUrl: varchar("image_url", { length: 500 }),
+  imageUrl: text("image_url"),
 });
 
 export const publicGames = pgTable("public_games", {

@@ -14,7 +14,10 @@
         "db:migrate:image-urls": "ts-node src/db/migrations/add-image-url-columns.ts",
         "db:migrate:add-user-address": "ts-node src/db/migrations/add-user-address.ts",
         "db:migrate:game-tables": "ts-node src/db/migrations/add-public-games.ts",
-        "db:migrate:add-user-phone": "ts-node src/db/migrations/add-user-phone.ts"
+        "db:migrate:add-user-phone": "ts-node src/db/migrations/add-user-phone.ts",
+        "db:migrate:add-reject": "ts-node src/db/migrations/add-reject.ts",
+        "db:migrate:add-venue-hours": "ts-node src/db/migrations/add-venue-hours.ts",
+        "db:migrate:fix-price-type": "ts-node src/db/migrations/fix-price-type.ts"
     },
     "keywords": [],
     "author": "",

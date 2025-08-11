@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
 import { users, venues, courts } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // Get all users
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -94,15 +94,51 @@ export const approveVenue = async (req: Request, res: Response) => {
   }
 };
 
+// Reject venue
+export const rejectVenue = async (req: Request, res: Response) => {
+  const { venueId } = req.params;
+  const { rejectionReason } = req.body;
+
+  try {
+    // Check if venue exists
+    const venue = await db.select()
+      .from(venues)
+      .where(eq(venues.id, parseInt(venueId)));
+    
+    if (venue.length === 0) {
+      return res.status(404).json({ message: "Venue not found" });
+    }
+
+    // Update venue to rejected status
+    await db.update(venues)
+      .set({ 
+        rejected: true,
+        rejectionReason: rejectionReason || "Doesn't meet our platform requirements"
+      })
+      .where(eq(venues.id, parseInt(venueId)));
+    
+    res.json({ message: "Venue rejected successfully" });
+  } catch (error) {
+    console.error("Error rejecting venue:", error);
+    res.status(500).json({ message: "Failed to reject venue" });
+  }
+};
+
 // Get pending venue approvals
 export const getPendingVenues = async (req: Request, res: Response) => {
   try {
     const pendingVenues = await db.select()
       .from(venues)
-      .where(eq(venues.approved, false));
+      .where(
+        and(
+          eq(venues.approved, false),
+          eq(venues.rejected, false) // Also check that it's not rejected
+        )
+      );
     
     res.json(pendingVenues);
   } catch (error) {
+    console.error("Error fetching pending venues:", error);
     res.status(500).json({ message: "Failed to fetch pending venues" });
   }
 };
@@ -142,32 +178,46 @@ export const deleteUser = async (req: Request & { user?: any }, res: Response) =
 
 // Create a venue as admin
 export const createVenue = async (req: Request & { user?: any }, res: Response) => {
-  const { name, description, address, location, sportTypes, amenities, pricePerHour, ownerId } = req.body;
+  const { name, description, address, location, sportTypes, amenities, pricePerHour, ownerId, openingTime, closingTime } = req.body;
   
   try {
     // Admin can specify an owner, or default to the admin user
     const targetOwnerId = ownerId || req.user.id;
     
     // Verify that the target owner exists
-    const owner = await db.select().from(users).where(eq(users.id, targetOwnerId));
+    const owner = await db.select().from(users).where(eq(users.id, parseInt(targetOwnerId)));
     if (owner.length === 0) {
       return res.status(400).json({ message: "Specified owner does not exist" });
     }
     
     // Create venue with automatic approval since admin is creating it
+    const venueData = {
+      ownerId: parseInt(targetOwnerId),
+      name,
+      description: description || null,
+      address,
+      location,
+      sportTypes: sportTypes || '',
+      amenities: amenities || '',
+      pricePerHour: pricePerHour.toString(),
+      approved: true,
+    };
+
+    // Only add openingTime and closingTime if they exist in the schema
+    if ('opening_time' in venues) {
+      Object.assign(venueData, { 
+        openingTime: openingTime || '08:00'
+      });
+    }
+
+    if ('closing_time' in venues) {
+      Object.assign(venueData, { 
+        closingTime: closingTime || '22:00'
+      });
+    }
+    
     const [newVenue] = await db.insert(venues)
-      .values({
-        ownerId: targetOwnerId,
-        name,
-        description,
-        address,
-        location,
-        sportTypes,
-        amenities,
-        pricePerHour: parseFloat(pricePerHour),
-        approved: true, // Auto-approve venues created by admin
-        createdAt: new Date()
-      })
+      .values(venueData)
       .returning();
     
     res.status(201).json({ 

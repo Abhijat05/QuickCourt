@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
 import { bookings, courts, venues, users } from "../db/schema";
-import { eq, and, lt, gte, inArray } from "drizzle-orm"; // Added users import
+import { eq, and, lt, gte, inArray } from "drizzle-orm";
 
 export const getUserDashboard = async (req: Request & { user?: any }, res: Response) => {
   const userId = req.user.id;
@@ -153,8 +153,13 @@ export const getUserBookingHistory = async (req: Request & { user?: any }, res: 
       };
     }));
     
+    // Define the proper type for the groups object
+    interface BookingsByPeriod {
+      [period: string]: any[]; // This creates an index signature allowing string keys
+    }
+    
     // Group bookings by month for easier frontend display
-    const groupedBookings = enhancedBookings.reduce((groups, booking) => {
+    const groupedBookings = enhancedBookings.reduce((groups: BookingsByPeriod, booking) => {
       const period = booking.period;
       if (!groups[period]) {
         groups[period] = [];

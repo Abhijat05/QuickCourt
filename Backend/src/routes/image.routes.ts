@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import * as imageController from "../controllers/image.controller";
 import { auth, requireRole } from "../middlewares/auth.middleware";
-import multer from "multer";
+import { upload } from '../config/cloudinary';
 
 const router = Router();
 
@@ -32,15 +32,7 @@ const handleMulterError = (err: any, req: Request, res: Response, next: NextFunc
 router.post(
   "/venues/:venueId", 
   requireRole(["owner"]), 
-  (req: Request, res: Response, next: NextFunction) => {
-    const upload = imageController.upload.single('image');
-    upload(req, res, (err: any) => {
-      if (err) {
-        return handleMulterError(err, req, res, next);
-      }
-      next();
-    });
-  },
+  upload.single('image'),
   imageController.uploadVenueImage
 );
 

@@ -10,7 +10,8 @@
         "db:generate": "drizzle-kit generate:pg",
         "db:migrate": "drizzle-kit migrate",
         "db:studio": "drizzle-kit studio",
-        "db:seed": "ts-node src/db/seed.ts"
+        "db:seed": "ts-node src/db/seed.ts",
+        "db:migrate:image-urls": "ts-node src/db/migrations/add-image-url-columns.ts"
     },
     "keywords": [],
     "author": "",
@@ -18,12 +19,14 @@
     "type": "commonjs",
     "dependencies": {
         "bcrypt": "^6.0.0",
+        "cloudinary": "^1.41.3",
         "cors": "^2.8.5",
         "dotenv": "^17.2.1",
         "drizzle-orm": "^0.44.4",
         "express": "^5.1.0",
         "jsonwebtoken": "^9.0.2",
         "multer": "^2.0.2",
+        "multer-storage-cloudinary": "^4.0.0",
         "nodemailer": "^7.0.5",
         "pg": "^8.16.3",
         "zod": "^4.0.17"

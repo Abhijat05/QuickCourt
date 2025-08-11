@@ -20,9 +20,15 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+
+// Enhanced CORS configuration
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
+  origin: ['http://localhost:5173', 'http://localhost:3000', '*'], // Add your frontend URL(s)
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Routes
@@ -34,7 +40,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/images", imageRoutes); // Register the routes
+app.use("/api/images", imageRoutes);
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

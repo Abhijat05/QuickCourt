@@ -9,5 +9,8 @@ router.use(auth);
 
 // User profile and stats
 router.get("/dashboard", userController.getUserDashboard);
+router.get("/profile", userController.getUserProfile);
+router.patch("/profile", userController.updateUserProfile);
+router.get("/history", userController.getUserBookingHistory);
 
 export default router;

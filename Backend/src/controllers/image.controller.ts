@@ -63,7 +63,8 @@ export const uploadVenueImage = async (req: Request & { user?: any }, res: Respo
     
     // Get the base URL from request for constructing image URLs
     const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    // The file object will contain a 'path' property with the Cloudinary URL
+    const imageUrl = (req.file as any).path;
     
     // Save image URL to database
     // This assumes you've added an 'imageUrl' field to your venues table in the schema

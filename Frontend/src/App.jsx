@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './components/ui/theme-provider';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -13,23 +14,25 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
-    <Router>
-      <Toaster position="top-center" />
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/verify-otp" element={<VerifyOtp />} />
-        <Route path="/verify-2fa" element={<Verify2FA />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </Router>
+    <ThemeProvider defaultTheme="system" enableSystem attribute="class">
+      <Router>
+        <Toaster position="top-center" />
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
+          <Route path="/verify-2fa" element={<Verify2FA />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }

@@ -1,180 +1,301 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from './ui/Button';
-import { Avatar, AvatarFallback } from './ui/Avatar';
 import { cn } from '../lib/utils';
+import ThemeToggleButton from './ui/theme-toggle-button';
+import { Avatar, AvatarFallback } from './ui/Avatar';
+import Button from './ui/Button';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from './ui/Sheet';
+import { Menu, X, ChevronDown } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, logout, theme, toggleTheme } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const location = useLocation();
+  
+  // Handle navbar appearance on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileOpen && !event.target.closest('.profile-menu')) {
+        setProfileOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileOpen]);
 
+  // Check if a link is active
+  const isActive = (path) => location.pathname === path;
+  
   return (
-    <nav className="bg-primary text-primary-foreground shadow-md">
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+      scrolled 
+        ? "bg-background/80 backdrop-blur-lg border-b shadow-sm" 
+        : "bg-transparent",
+      "lg:px-8"
+    )}>
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="font-bold text-xl flex items-center gap-2">
-            <img src="/QuickCourt.png" alt="Logo" className="w-8 h-8" />
-            QuickCourt
+          {/* Logo */}
+          <Link to="/" className="font-bold text-xl flex items-center gap-2 group">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
+              scrolled ? "bg-primary/10" : "bg-white/10 backdrop-blur-sm"
+            )}>
+              <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="Logo" className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col">
+              <span className={cn(
+                "font-bold transition-all duration-300",
+                scrolled ? "text-foreground" : "bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent"
+              )}>
+                QuickCourt
+              </span>
+              <span className={cn(
+                "text-xs font-normal -mt-1 transition-opacity duration-300",
+                scrolled ? "text-muted-foreground" : "text-white/70"
+              )}>
+                Book courts instantly
+              </span>
+            </div>
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            <button 
-              onClick={toggleTheme} 
-              className="p-2 rounded-full hover:bg-white/10 transition-colors"
-              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            >
-              {theme === 'light' ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                </svg>
-              )}
-            </button>
+          <div className="hidden md:flex items-center space-x-2">
+            {/* Main Navigation Links */}
+            <div className="mr-2 flex items-center bg-background/20 backdrop-blur-md rounded-full p-1 border border-border/30">
+              {[
+                { path: '/', label: 'Home' },
+                { path: '/dashboard', label: 'Dashboard', protected: true },
+                { path: '/about', label: 'About' },
+              ].map(link => !link.protected || user ? (
+                <Link 
+                  key={link.path}
+                  to={link.path}
+                  className={cn(
+                    "px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200",
+                    isActive(link.path)
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-primary/10"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ) : null)}
+            </div>
             
-            <Link to="/about" className="hover:text-primary-foreground/80 px-3 py-2 text-sm font-medium transition-colors">
-              About
-            </Link>
+            <ThemeToggleButton variant="circle-blur" start="top-right" />
             
             {user ? (
-              <>
-                <Link to="/dashboard" className="hover:text-primary-foreground/80 px-3 py-2 text-sm font-medium transition-colors">
-                  Dashboard
-                </Link>
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary-foreground text-primary text-sm">
-                      {/* Get initials from token if possible */}
-                      QC
+              <div className="relative profile-menu">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-2 rounded-full hover:bg-background/30 p-1.5 pl-1"
+                >
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/20 hover:ring-primary/40 transition-all duration-200">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-sm">
+                      {user.token.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <Button 
-                    onClick={logout}
-                    variant="secondary"
-                    size="sm"
-                    className="ml-2"
-                  >
-                    Logout
-                  </Button>
-                </div>
-              </>
+                  <ChevronDown className={cn(
+                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                    profileOpen && "rotate-180"
+                  )} />
+                </Button>
+                
+                {/* Profile Dropdown */}
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-lg bg-card shadow-lg ring-1 ring-black/5 border border-border/50 overflow-hidden">
+                    <div className="p-2 border-b border-border/50">
+                      <p className="text-sm font-semibold">My Account</p>
+                      <p className="text-xs text-muted-foreground">User</p>
+                    </div>
+                    <div className="p-1">
+                      <Link 
+                        to="/profile" 
+                        className="block px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        Profile Settings
+                      </Link>
+                      <Link 
+                        to="/bookings" 
+                        className="block px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        My Bookings
+                      </Link>
+                      <button
+                        onClick={() => {
+                          logout();
+                          setProfileOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-destructive rounded-md hover:bg-destructive/10"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="flex gap-3">
-                <Button variant="ghost" asChild>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" asChild className="hover:bg-background/20">
                   <Link to="/login">Login</Link>
                 </Button>
-                <Button variant="secondary" asChild>
+                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Link to="/signup">Sign up</Link>
                 </Button>
               </div>
             )}
           </div>
           
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button 
-              onClick={toggleMobileMenu}
-              className="text-primary-foreground p-2"
-              aria-expanded={mobileMenuOpen}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              )}
-            </button>
+          {/* Mobile menu */}
+          <div className="md:hidden flex items-center gap-3">
+            <ThemeToggleButton variant="circle" start="top-right" />
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className={cn(
+                    "border-primary/20 p-2 rounded-full",
+                    scrolled ? "bg-background/50" : "bg-white/10 text-white"
+                  )}
+                >
+                  {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                  <span className="sr-only">Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] border-l border-border/50 p-0">
+                <div className="flex flex-col h-full">
+                  {/* Mobile menu header */}
+                  <div className="border-b border-border/50 p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="Logo" className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">QuickCourt</h3>
+                        <p className="text-xs text-muted-foreground">Find and book sports courts</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile menu links */}
+                  <div className="p-6 flex-1">
+                    <div className="space-y-1 mb-6">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2 px-2">Navigation</h4>
+                      <Link 
+                        to="/" 
+                        className={cn(
+                          "block px-3 py-2 rounded-lg text-sm transition-colors",
+                          isActive("/") 
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => setOpen(false)}
+                      >
+                        Home
+                      </Link>
+                      
+                      {user && (
+                        <Link 
+                          to="/dashboard" 
+                          className={cn(
+                            "block px-3 py-2 rounded-lg text-sm transition-colors",
+                            isActive("/dashboard") 
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "hover:bg-muted"
+                          )}
+                          onClick={() => setOpen(false)}
+                        >
+                          Dashboard
+                        </Link>
+                      )}
+                      
+                      <Link 
+                        to="/about" 
+                        className={cn(
+                          "block px-3 py-2 rounded-lg text-sm transition-colors",
+                          isActive("/about") 
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => setOpen(false)}
+                      >
+                        About
+                      </Link>
+                    </div>
+                    
+                    {user && (
+                      <div className="space-y-1 mb-6">
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2 px-2">Account</h4>
+                        <Link 
+                          to="/profile" 
+                          className="block px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                          onClick={() => setOpen(false)}
+                        >
+                          Profile Settings
+                        </Link>
+                        <Link 
+                          to="/bookings" 
+                          className="block px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                          onClick={() => setOpen(false)}
+                        >
+                          My Bookings
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Mobile menu footer */}
+                  <div className="p-6 border-t border-border/50">
+                    {user ? (
+                      <Button 
+                        onClick={() => {
+                          logout();
+                          setOpen(false);
+                        }}
+                        variant="outline"
+                        className="w-full justify-center"
+                      >
+                        Logout
+                      </Button>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" asChild>
+                          <Link to="/login" onClick={() => setOpen(false)}>Login</Link>
+                        </Button>
+                        <Button asChild>
+                          <Link to="/signup" onClick={() => setOpen(false)}>Sign up</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
-        </div>
-      </div>
-      
-      {/* Mobile menu */}
-      <div className={cn(
-        "md:hidden transition-all duration-300 ease-in-out overflow-hidden",
-        mobileMenuOpen ? "max-h-64" : "max-h-0"
-      )}>
-        <div className="px-4 pt-2 pb-4 space-y-1 border-t border-white/10">
-          <Link 
-            to="/about" 
-            className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            About
-          </Link>
-          
-          {user ? (
-            <>
-              <Link 
-                to="/dashboard" 
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <button 
-                onClick={() => {
-                  logout();
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link 
-                to="/login" 
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link 
-                to="/signup" 
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign up
-              </Link>
-            </>
-          )}
-          
-          <button 
-            onClick={() => {
-              toggleTheme();
-              setMobileMenuOpen(false);
-            }}
-            className="flex w-full items-center px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
-          >
-            {theme === 'light' ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                </svg>
-                Dark Mode
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                </svg>
-                Light Mode
-              </>
-            )}
-          </button>
         </div>
       </div>
     </nav>

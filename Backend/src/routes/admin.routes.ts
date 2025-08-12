@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { approveVenue, rejectVenue, deleteVenue } from "../controllers/admin.controller";
 import * as adminController from "../controllers/admin.controller";
 import { auth, requireRole } from "../middlewares/auth.middleware";
 
@@ -15,15 +16,18 @@ router.post("/users/role", adminController.changeUserRole);
 
 // Venue approval
 router.get("/venues/pending", adminController.getPendingVenues);
-router.patch("/venues/:venueId/approve", adminController.approveVenue);
+router.patch("/venues/:venueId/approve", approveVenue);
 
 // Venue rejection
-router.patch("/venues/:venueId/reject", adminController.rejectVenue); // New endpoint for admin to reject venues
+router.patch("/venues/:venueId/reject", rejectVenue); // New endpoint for admin to reject venues
 
 // Admin venue creation
 router.post("/venues", adminController.createVenue);
 
 // Admin court creation
 router.post("/venues/:venueId/courts", adminController.createCourt); // New endpoint for admin to create courts
+
+// Admin venue deletion
+router.delete("/venues/:venueId", deleteVenue);
 
 export default router;

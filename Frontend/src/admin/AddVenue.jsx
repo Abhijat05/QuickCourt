@@ -28,12 +28,14 @@ export default function AdminAddVenue() {
     sportTypes: '',
     amenities: '',
     pricePerHour: '',
+    // courts removed from pre-creation flow
   });
-  
   const [errors, setErrors] = useState({});
+  // removed courtErrors/newCourt state
 
   const steps = [
     { id: 1, title: 'Basic Info', description: 'Venue details and location' },
+    { id: 2, title: 'Review', description: 'Confirm and create' }
     { id: 2, title: 'Review', description: 'Confirm and create' }
   ];
 
@@ -68,32 +70,29 @@ export default function AdminAddVenue() {
         return;
       }
     }
-    
-    setCurrentStep(prev => prev + 1);
+    setCurrentStep(prev => Math.min(prev + 1, 2));
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => prev - 1);
+    setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
       const venueData = {
         name: formData.name,
         description: formData.description,
         address: formData.address,
         location: formData.location,
-        sportTypes: formData.sportTypes.split(',').map(type => type.trim()),
-        amenities: formData.amenities ? formData.amenities.split(',').map(a => a.trim()) : [],
+        // keep strings consistent with owner flow
+        sportTypes: formData.sportTypes,
+        amenities: formData.amenities || '',
         pricePerHour: parseFloat(formData.pricePerHour),
       };
 
       const venueRes = await adminService.createVenue(venueData);
-      console.log('Admin create venue response:', venueRes?.data);
-
       const venueId =
         venueRes?.data?.venue?.[0]?.id ??
         venueRes?.data?.venue?.id ??

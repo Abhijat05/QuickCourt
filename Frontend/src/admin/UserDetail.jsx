@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { adminService } from '../services/api';
 import { Card } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { motion } from 'framer-motion';
 import { ArrowLeft, User, Mail, Calendar, Shield } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export default function AdminUserDetail() {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -31,6 +33,22 @@ export default function AdminUserDetail() {
 
     fetchUserDetails();
   }, [userId]);
+
+  const handleDeleteAccount = async () => {
+    if (!userId) return;
+    if (!window.confirm('Delete this user account? This action cannot be undone.')) return;
+    try {
+      setDeleting(true);
+      await adminService.deleteUser(userId);
+      toast.success('User deleted');
+      navigate('/admin/users');
+    } catch (err) {
+      console.error('Delete user failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -111,7 +129,14 @@ export default function AdminUserDetail() {
             <Card.Content className="space-y-4">
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1">Reset Password</Button>
-                <Button variant="destructive" className="flex-1">Delete Account</Button>
+                <Button 
+                  variant="destructive" 
+                  className="flex-1"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Deleting...' : 'Delete Account'}
+                </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button>Verify Account</Button>

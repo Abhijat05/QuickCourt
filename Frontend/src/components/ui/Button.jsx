@@ -31,18 +31,21 @@ const buttonVariants = cva(
   }
 );
 
-const Button = React.forwardRef(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
+const Button = React.forwardRef(function Button(
+  { className, variant, size, asChild = false, type, ...props },
+  ref
+) {
+  const Comp = asChild ? Slot : "button";
+  return (
+    <Comp
+      ref={ref}
+      // default type="button" only for real buttons
+      type={asChild ? undefined : (type ?? "button")}
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
+});
 
 Button.displayName = "Button";
 

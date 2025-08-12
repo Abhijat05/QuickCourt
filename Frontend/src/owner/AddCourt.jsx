@@ -36,7 +36,7 @@ export default function OwnerAddCourt() {
       for (let i = 0; i < count; i++) {
         const courtName = count > 1 ? `${form.name} ${i + 1}` : form.name;
         reqs.push(
-          ownerService.createCourt(venueId, {
+          ownerService.createCourt(Number(venueId), {
             name: courtName,
             sportType: form.sportType,
             pricePerHour: parseFloat(form.pricePerHour),

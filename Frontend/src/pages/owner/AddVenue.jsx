@@ -4,7 +4,7 @@ import { ownerService } from '../../services/api';
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Building, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Building } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AddVenue() {
@@ -17,20 +17,9 @@ export default function AddVenue() {
     location: '',
     sportTypes: '',
     amenities: '',
-    pricePerHour: '',
-    courts: [], // Add courts field
+    pricePerHour: ''
   });
   const [errors, setErrors] = useState({});
-  const [newCourt, setNewCourt] = useState({ 
-    name: '', 
-    sportType: '', 
-    pricePerHour: '',
-    openingTime: '08:00', 
-    closingTime: '22:00',
-    count: 1 // Add count field with default value of 1
-  });
-  
-  const [courtErrors, setCourtErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,59 +28,6 @@ export default function AddVenue() {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
-
-  const handleCourtChange = (e) => {
-    const { name, value } = e.target;
-    setNewCourt((prev) => ({ ...prev, [name]: value }));
-    // Clear court errors when typing
-    if (courtErrors[name]) {
-      setCourtErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  // Update the court validation function
-  const validateCourt = () => {
-    const errors = {};
-    if (!newCourt.name.trim()) errors.name = 'Court name is required';
-    if (!newCourt.sportType.trim()) errors.sportType = 'Sport type is required';
-    if (!newCourt.pricePerHour || isNaN(newCourt.pricePerHour) || newCourt.pricePerHour <= 0) {
-      errors.pricePerHour = 'Price must be greater than 0';
-    }
-    if (!newCourt.count || isNaN(newCourt.count) || newCourt.count < 1) {
-      errors.count = 'Count must be at least 1';
-    }
-    
-    // Validate times
-    const openingHour = parseInt(newCourt.openingTime.split(':')[0]);
-    const closingHour = parseInt(newCourt.closingTime.split(':')[0]);
-    if (closingHour <= openingHour) {
-      errors.closingTime = 'Closing time must be after opening time';
-    }
-    
-    return errors;
-  };
-
-  const addCourt = () => {
-    const validationErrors = validateCourt();
-    if (Object.keys(validationErrors).length > 0) {
-      setCourtErrors(validationErrors);
-      return;
-    }
-    
-    setFormData((prev) => ({
-      ...prev,
-      courts: [...prev.courts, newCourt],
-    }));
-    setNewCourt({ 
-      name: '', 
-      sportType: '', 
-      pricePerHour: '', 
-      openingTime: '08:00', 
-      closingTime: '22:00',
-      count: 1 
-    });
-    setCourtErrors({});
   };
 
   const validateForm = () => {
@@ -104,7 +40,7 @@ export default function AddVenue() {
     if (!formData.location.trim()) newErrors.location = 'Location is required.';
     if (!formData.sportTypes.trim()) newErrors.sportTypes = 'Sport types are required.';
     if (!formData.description.trim()) newErrors.description = 'Description is required.';
-    if (formData.courts.length === 0) newErrors.courts = 'At least one court is required.';
+    // do not require courts on the venue form
     return newErrors;
   };
 
@@ -120,55 +56,32 @@ export default function AddVenue() {
 
     setIsSubmitting(true);
     try {
-      // Prepare venue data without courts
       const venueData = {
         name: formData.name,
         description: formData.description,
         address: formData.address,
         location: formData.location,
-        // strings, not arrays
         sportTypes: formData.sportTypes,
         amenities: formData.amenities || '',
-        pricePerHour: parseFloat(formData.pricePerHour)
+        pricePerHour: parseFloat(formData.pricePerHour),
       };
-      
-      // Step 1: Create the venue first
+
       const venueResponse = await ownerService.createVenue(venueData);
-      const venueId = venueResponse.data.venue.id;
-      
-      // Step 2: Add courts using the court API - handle multiple courts for each entry based on count
-      const courtPromises = [];
-      
-      for (const courtTemplate of formData.courts) {
-        // Create the number of courts specified in the count field
-        const count = parseInt(courtTemplate.count) || 1;
-        
-        for (let i = 0; i < count; i++) {
-          // Generate unique names for each court if count > 1
-          const courtName = count > 1 
-            ? `${courtTemplate.name} ${i + 1}` 
-            : courtTemplate.name;
-            
-          const courtData = {
-            name: courtName,
-            sportType: courtTemplate.sportType,
-            pricePerHour: parseFloat(courtTemplate.pricePerHour),
-            openingTime: courtTemplate.openingTime,
-            closingTime: courtTemplate.closingTime
-          };
-          
-          // Use the dedicated court creation API endpoint
-          courtPromises.push(ownerService.createCourt(venueId, courtData));
-        }
+      const venueId =
+        venueResponse?.data?.venue?.[0]?.id ??
+        venueResponse?.data?.venue?.id ??
+        venueResponse?.data?.id;
+      const venueIdNum = Number(venueId);
+      if (!Number.isFinite(venueIdNum)) {
+        console.error('Invalid venueId from createVenue response:', venueResponse?.data);
+        throw new Error('Failed to create venue (invalid id returned by API)');
       }
-      
-      // Wait for all courts to be created
-      await Promise.all(courtPromises);
-      
-      toast.success('Venue and courts created successfully! Venue will be reviewed by an admin.');
-      navigate('/owner/venues');
+
+      toast.success('Venue created. Now add courts.');
+      navigate(`/owner/venues/${venueIdNum}/courts/new`);
+      return;
     } catch (err) {
-      console.error('Error creating venue or courts:', err);
+      console.error('Error creating venue:', err);
       toast.error(err.response?.data?.message || 'Failed to create venue');
     } finally {
       setIsSubmitting(false);
@@ -188,15 +101,6 @@ export default function AddVenue() {
         </Button>
         <h1 className="text-3xl font-bold">Add New Venue</h1>
       </div>
-      
-      {formData.courts.length === 0 && (
-        <div className="p-4 mb-6 border border-amber-200 bg-amber-50 rounded-md">
-          <div className="flex items-center text-amber-800">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            <p><strong>Note:</strong> At least one court is required to create a venue.</p>
-          </div>
-        </div>
-      )}
 
       <Card>
         <Card.Header>
@@ -301,96 +205,6 @@ export default function AddVenue() {
                 rows="4"
               ></textarea>
               {errors.description && <p className="text-sm text-destructive mt-1">{errors.description}</p>}
-            </div>
-
-            {/* Court Details */}
-            <div>
-              <h3 className="text-lg font-medium mb-3">Add Courts *</h3>
-              {errors.courts && <p className="text-sm text-destructive mb-2">{errors.courts}</p>}
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <input
-                    type="text"
-                    name="name"
-                    value={newCourt.name}
-                    onChange={handleCourtChange}
-                    placeholder="Court Name"
-                    className={`p-2 border rounded-md w-full ${courtErrors.name ? 'border-destructive' : 'border-input'}`}
-                  />
-                  {courtErrors.name && <p className="text-xs text-destructive mt-1">{courtErrors.name}</p>}
-                </div>
-                
-                <div>
-                  <input
-                    type="text"
-                    name="sportType"
-                    value={newCourt.sportType}
-                    onChange={handleCourtChange}
-                    placeholder="Sport Type"
-                    className={`p-2 border rounded-md w-full ${courtErrors.sportType ? 'border-destructive' : 'border-input'}`}
-                  />
-                  {courtErrors.sportType && <p className="text-xs text-destructive mt-1">{courtErrors.sportType}</p>}
-                </div>
-                
-                <div>
-                  <input
-                    type="number"
-                    name="pricePerHour"
-                    value={newCourt.pricePerHour}
-                    onChange={handleCourtChange}
-                    placeholder="Price Per Hour"
-                    className={`p-2 border rounded-md w-full ${courtErrors.pricePerHour ? 'border-destructive' : 'border-input'}`}
-                    min="0"
-                    step="0.01"
-                  />
-                  {courtErrors.pricePerHour && <p className="text-xs text-destructive mt-1">{courtErrors.pricePerHour}</p>}
-                </div>
-                
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="block text-xs mb-1">Opening Time</label>
-                    <input
-                      type="time"
-                      name="openingTime"
-                      value={newCourt.openingTime}
-                      onChange={handleCourtChange}
-                      className="p-2 border rounded-md w-full"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-xs mb-1">Closing Time</label>
-                    <input
-                      type="time"
-                      name="closingTime"
-                      value={newCourt.closingTime}
-                      onChange={handleCourtChange}
-                      className={`p-2 border rounded-md w-full ${courtErrors.closingTime ? 'border-destructive' : 'border-input'}`}
-                    />
-                    {courtErrors.closingTime && <p className="text-xs text-destructive mt-1">{courtErrors.closingTime}</p>}
-                  </div>
-                </div>
-                
-                <Button type="button" variant="outline" onClick={addCourt}>
-                  Add Court
-                </Button>
-              </div>
-              <ul className="mt-4 space-y-2">
-                {formData.courts.map((court, index) => (
-                  <li key={index} className="flex justify-between items-center p-2 border rounded-md">
-                    <span>
-                      {court.name} ({court.sportType}) - ${court.pricePerHour}/hr
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {court.openingTime} - {court.closingTime}
-                      </span>
-                      {court.count > 1 && (
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded ml-2">
-                          × {court.count}
-                        </span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">

@@ -111,11 +111,21 @@ export const createCourt = async (req: Request & { user?: any }, res: Response) 
   const { name, sportType, pricePerHour, openingTime, closingTime } = req.body;
   
   try {
+    const venueIdNum = Number(venueId);
+    if (!Number.isFinite(venueIdNum) || !Number.isInteger(venueIdNum)) {
+      console.warn('createCourt: invalid venueId param', { venueId });
+      return res.status(400).json({ message: "Invalid venueId" });
+    }
+    const price = Number(pricePerHour);
+    if (!Number.isFinite(price) || price <= 0) {
+      return res.status(400).json({ message: "Invalid pricePerHour" });
+    }
+
     // First verify venue ownership
     const venue = await db.select()
       .from(venues)
       .where(and(
-        eq(venues.id, parseInt(venueId)),
+        eq(venues.id, venueIdNum),
         eq(venues.ownerId, req.user.id)
       ));
     
@@ -126,10 +136,10 @@ export const createCourt = async (req: Request & { user?: any }, res: Response) 
     // Create court
     const [newCourt] = await db.insert(courts)
       .values({
-        venueId: parseInt(venueId),
+        venueId: venueIdNum,
         name,
         sportType,
-        pricePerHour,
+        pricePerHour: price,
         openingTime,
         closingTime,
       })

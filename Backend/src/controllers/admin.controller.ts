@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
-import { users, venues, courts } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { users, venues, courts, bookings } from "../db/schema";
+import { and, eq, inArray } from "drizzle-orm";
 
 // Get all users
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -264,5 +264,40 @@ export const createCourt = async (req: Request & { user?: any }, res: Response) 
   } catch (error) {
     console.error("Error creating court:", error);
     res.status(500).json({ message: "Failed to create court" });
+  }
+};
+
+// Delete venue
+export const deleteVenue = async (req: Request & { user?: any }, res: Response) => {
+  try {
+    console.log('DELETE /api/admin/venues/:venueId', { venueId: req.params.venueId, userId: req.user?.id, role: req.user?.role });
+    const id = Number(req.params.venueId);
+    if (!Number.isFinite(id) || !Number.isInteger(id)) {
+      return res.status(400).json({ message: "Invalid venueId" });
+    }
+
+    // Optional: ensure it exists
+    const existing = await db.select().from(venues).where(eq(venues.id, id));
+    if (existing.length === 0) {
+      return res.status(404).json({ message: "Venue not found" });
+    }
+
+    // Manual cascade in a transaction (bookings -> courts -> venue)
+    await db.transaction(async (tx) => {
+      const courtRows = await tx.select({ id: courts.id }).from(courts).where(eq(courts.venueId, id));
+      const courtIds = courtRows.map(c => c.id);
+
+      if (courtIds.length > 0) {
+        await tx.delete(bookings).where(inArray(bookings.courtId, courtIds));
+        await tx.delete(courts).where(eq(courts.venueId, id));
+      }
+
+      await tx.delete(venues).where(eq(venues.id, id));
+    });
+
+    return res.json({ message: "Venue deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting venue:", error);
+    return res.status(500).json({ message: "Failed to delete venue" });
   }
 };

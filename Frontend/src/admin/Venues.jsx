@@ -23,7 +23,8 @@ import {
   List,
   Download,
   RefreshCw,
-  X
+  X,
+  Trash
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -92,6 +93,40 @@ export default function AdminVenues() {
       toast.error(e.response?.data?.message || 'Reject failed');
     } finally {
       setRejectingId(null);
+    }
+  };
+
+  const handleDeleteVenue = async (venueId) => {
+    console.log('Delete button clicked for venue:', venueId);
+    
+    // Let's add some more immediate debug info
+    console.log('Confirm dialog will appear now');
+    
+    // Use a try-catch around the confirmation to see if this is the issue
+    try {
+      const confirmed = window.confirm('Delete this venue? All courts and bookings under it will be removed.');
+      console.log('Confirmation result:', confirmed);
+      
+      if (!confirmed) {
+        console.log('User cancelled the deletion');
+        return;
+      }
+      
+      console.log('Sending delete request to API...');
+      const response = await adminService.deleteVenue(venueId);
+      console.log('Delete API response:', response);
+      
+      setVenues(prev => prev.filter(v => v.id !== venueId));
+      setPendingVenues(prev => prev.filter(v => v.id !== venueId));
+      toast.success('Venue deleted');
+    } catch (err) {
+      console.error('Delete venue failed:', err);
+      console.error('Error details:', {
+        status: err.response?.status,
+        message: err.response?.data?.message || err.message,
+        data: err.response?.data
+      });
+      toast.error(err.response?.data?.message || 'Failed to delete venue');
     }
   };
 
@@ -357,6 +392,18 @@ export default function AdminVenues() {
                             <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          type="button"
+                          onClick={function() {
+                            console.log('Delete button clicked directly for pending venue:', venue.id);
+                            handleDeleteVenue(venue.id);
+                          }}
+                        >
+                          <Trash className="mr-1 h-4 w-4" />
+                          Delete
+                        </Button>
                       </div>
                       {showRejectBox === venue.id && (
                         <div className="mt-3 p-3 border rounded-md bg-muted/40 space-y-2">
@@ -436,7 +483,7 @@ export default function AdminVenues() {
                     <motion.div key={venue.id} variants={itemVariants}>
                       {viewMode === 'grid' ? (
                         // Grid View
-                        <div className="border rounded-lg p-4 hover:shadow-md transition-all duration-300 hover:border-primary/20">
+                        <div className="border rounded-lg p-4 hover:shadow-md transition-all duration-300">
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="font-medium">{venue.name}</h3>
                             <Badge variant="outline" className="bg-success/10 text-success border-success/20">
@@ -458,12 +505,27 @@ export default function AdminVenues() {
                             <div className="text-sm text-muted-foreground">
                               {venue.courts?.length || 0} courts
                             </div>
-                            <Button variant="ghost" size="sm" className="gap-1" asChild>
-                              <Link to={`/venues/${venue.id}`}>
-                                <span>Details</span>
-                                <ChevronRight size={16} />
-                              </Link>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" className="gap-1" asChild>
+                                <Link to={`/venues/${venue.id}`}>
+                                  <span>Details</span>
+                                  <ChevronRight size={16} />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                type="button"
+                                onClick={function() {
+                                  console.log('Delete button clicked directly for grid venue:', venue.id);
+                                  handleDeleteVenue(venue.id);
+                                }}
+                                className="gap-1"
+                              >
+                                <Trash size={16} />
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ) : (
@@ -502,6 +564,19 @@ export default function AdminVenues() {
                                 </div>
                               </div>
                             </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              type="button"
+                              onClick={function() {
+                                console.log('Delete button clicked directly for list venue:', venue.id);
+                                handleDeleteVenue(venue.id);
+                              }}
+                              className="gap-1"
+                            >
+                              <Trash size={16} />
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       )}

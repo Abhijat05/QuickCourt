@@ -47,10 +47,15 @@ export default function VenueDetail() {
 
         const venueResponse = await venueService.getVenueById(id);
 
-        let courts = [];
+        // Start with courts from venue API (used by booking/check availability)
+        let courts = Array.isArray(venueResponse.data?.courts) ? venueResponse.data.courts : [];
+
         try {
           const courtsResponse = await courtService.getCourtsByVenue(id);
-          courts = courtsResponse.data || [];
+          // Only override if the courts endpoint returns a non-empty list
+          if (Array.isArray(courtsResponse.data) && courtsResponse.data.length > 0) {
+            courts = courtsResponse.data;
+          }
         } catch (courtError) {
           console.warn("Court service failed, falling back to venue data:", courtError);
         }
@@ -60,11 +65,9 @@ export default function VenueDetail() {
           const imgRes = await imageService.getVenueImages(id);
           if (imgRes.data) {
             const { venue: vImg, courts: courtImgs } = imgRes.data;
-            // Merge venue image
             if (vImg?.imageUrl) {
               venueResponse.data.imageUrl = vImg.imageUrl;
             }
-            // Merge court images by id
             if (Array.isArray(courtImgs) && courtImgs.length) {
               courts = courts.map(c =>
                 (courtImgs.find(ci => ci.id === c.id)?.imageUrl

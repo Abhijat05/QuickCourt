@@ -78,22 +78,14 @@ export default function VenueManagement() {
         venueRes?.data?.venue?.[0]?.id ??
         venueRes?.data?.venue?.id ??
         venueRes?.data?.id;
-
       if (!venueId) {
         console.error('No venue id in response:', venueRes?.data);
         throw new Error('Failed to create venue');
       }
 
-      // 2) Create a court for that venue
-      await ownerService.createCourt(venueId, {
-        name: quickCourt.name,
-        sportType: quickCourt.sportType,
-        pricePerHour: parseFloat(quickCourt.pricePerHour),
-        openingTime: quickCourt.openingTime,
-        closingTime: quickCourt.closingTime,
-      });
-
-      toast.success('Venue and court created');
+     // 2) Redirect to add courts
+     toast.success('Venue created. Now add courts.');
+     navigate(`/owner/venues/${venueId}/courts/new`);
       setShowQuickCreate(false);
       setQuickVenue({ name: '', address: '', location: '', sportTypes: '', description: '', pricePerHour: '' });
       setQuickCourt({ name: '', sportType: '', pricePerHour: '', openingTime: '08:00', closingTime: '22:00' });

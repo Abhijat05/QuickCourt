@@ -35,7 +35,7 @@ export default function AdminAddVenue() {
 
   const steps = [
     { id: 1, title: 'Basic Info', description: 'Venue details and location' },
-    { id: 2, title: 'Review', description: 'Confirm and create' }
+    { id: 2, title: 'Review', description: 'Confirm and create' },
     { id: 2, title: 'Review', description: 'Confirm and create' }
   ];
 

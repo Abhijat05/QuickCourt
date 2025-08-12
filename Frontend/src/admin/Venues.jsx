@@ -38,6 +38,7 @@ export default function AdminVenues() {
   const [rejectingId, setRejectingId] = useState(null);
   const [showRejectBox, setShowRejectBox] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [deleteConfirmVenueId, setDeleteConfirmVenueId] = useState(null);
 
   useEffect(() => {
     fetchVenues();
@@ -97,36 +98,32 @@ export default function AdminVenues() {
   };
 
   const handleDeleteVenue = async (venueId) => {
-    console.log('Delete button clicked for venue:', venueId);
+    console.log("Delete venue function called with ID:", venueId);
+    setDeleteConfirmVenueId(venueId); // Just set the ID to show the dialog
+  };
+
+  // This function will be called when the user confirms deletion in our custom dialog
+  const confirmDeleteVenue = async () => {
+    const venueId = deleteConfirmVenueId;
+    if (!venueId) return;
     
-    // Let's add some more immediate debug info
-    console.log('Confirm dialog will appear now');
-    
-    // Use a try-catch around the confirmation to see if this is the issue
     try {
-      const confirmed = window.confirm('Delete this venue? All courts and bookings under it will be removed.');
-      console.log('Confirmation result:', confirmed);
+      console.log("Sending delete request to API...");
+      toast.loading('Deleting venue...');
       
-      if (!confirmed) {
-        console.log('User cancelled the deletion');
-        return;
-      }
-      
-      console.log('Sending delete request to API...');
-      const response = await adminService.deleteVenue(venueId);
-      console.log('Delete API response:', response);
+      await adminService.deleteVenue(venueId);
       
       setVenues(prev => prev.filter(v => v.id !== venueId));
       setPendingVenues(prev => prev.filter(v => v.id !== venueId));
-      toast.success('Venue deleted');
-    } catch (err) {
-      console.error('Delete venue failed:', err);
-      console.error('Error details:', {
-        status: err.response?.status,
-        message: err.response?.data?.message || err.message,
-        data: err.response?.data
-      });
-      toast.error(err.response?.data?.message || 'Failed to delete venue');
+      
+      toast.dismiss();
+      toast.success('Venue deleted successfully');
+    } catch (error) {
+      console.error("Delete venue error:", error);
+      toast.dismiss();
+      toast.error(error.response?.data?.message || "Failed to delete venue");
+    } finally {
+      setDeleteConfirmVenueId(null); // Close the dialog
     }
   };
 
@@ -395,13 +392,15 @@ export default function AdminVenues() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          type="button"
-                          onClick={function() {
-                            console.log('Delete button clicked directly for pending venue:', venue.id);
-                            handleDeleteVenue(venue.id);
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent any parent form submission
+                            e.stopPropagation(); // Stop event bubbling
+                            console.log("Delete button clicked for venue:", venue.id); // Debug log
+                            handleDeleteVenue(venue.id); // This now opens the dialog instead of directly confirming
                           }}
+                          className="gap-1"
                         >
-                          <Trash className="mr-1 h-4 w-4" />
+                          <Trash size={16} />
                           Delete
                         </Button>
                       </div>
@@ -515,10 +514,11 @@ export default function AdminVenues() {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                type="button"
-                                onClick={function() {
-                                  console.log('Delete button clicked directly for grid venue:', venue.id);
-                                  handleDeleteVenue(venue.id);
+                                onClick={(e) => {
+                                  e.preventDefault(); // Prevent any parent form submission
+                                  e.stopPropagation(); // Stop event bubbling
+                                  console.log("Delete button clicked for venue:", venue.id); // Debug log
+                                  handleDeleteVenue(venue.id); // This now opens the dialog instead of directly confirming
                                 }}
                                 className="gap-1"
                               >
@@ -567,10 +567,11 @@ export default function AdminVenues() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              type="button"
-                              onClick={function() {
-                                console.log('Delete button clicked directly for list venue:', venue.id);
-                                handleDeleteVenue(venue.id);
+                              onClick={(e) => {
+                                e.preventDefault(); // Prevent any parent form submission
+                                e.stopPropagation(); // Stop event bubbling
+                                console.log("Delete button clicked for venue:", venue.id); // Debug log
+                                handleDeleteVenue(venue.id); // This now opens the dialog instead of directly confirming
                               }}
                               className="gap-1"
                             >
@@ -603,6 +604,33 @@ export default function AdminVenues() {
             </Card.Content>
           </Card>
         </motion.div>
+
+        {/* Custom Delete Confirmation Dialog */}
+        {deleteConfirmVenueId && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full border">
+              <h3 className="text-lg font-bold mb-2">Confirm Deletion</h3>
+              <p className="mb-4">
+                Are you sure you want to delete venue #{deleteConfirmVenueId}? This will also remove all related courts and bookings.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDeleteConfirmVenueId(null)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={confirmDeleteVenue}
+                >
+                  <Trash className="mr-1 h-4 w-4" />
+                  Delete Permanently
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );

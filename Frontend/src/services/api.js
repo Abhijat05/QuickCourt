@@ -110,7 +110,7 @@ export const adminService = {
   getPendingVenues: () => safeApiCall(() => api.get('/admin/venues/pending')),
   approveVenue: (venueId) => safeApiCall(() => api.patch(`/admin/venues/${venueId}/approve`)),
   rejectVenue: (venueId, rejectionReason) => safeApiCall(() => api.patch(`/admin/venues/${venueId}/reject`, { rejectionReason })),
-  deleteVenue: (venueId) => safeApiCall(() => api.delete(`/admin/venues/${venueId}`)),
+  deleteVenue: (venueId) => safeApiCall(() => api.delete(`/admin/venues/${venueId}`)), // Fix here
   // Use admin endpoints
   createVenue: (data) => safeApiCall(() => api.post('/admin/venues', data)),
   createCourt: (venueId, data) => safeApiCall(() => api.post(`/admin/venues/${venueId}/courts`, data)),

@@ -416,12 +416,21 @@ export default function PublicGames() {
                   className="w-full border rounded-md px-3 py-2 text-sm"
                 >
                   <option value="">Select your upcoming booking</option>
-                  {bookings.map(b => (
-                    <option key={b.id} value={b.id}>
-                      {b.courtName || 'Court'} • {b.date} {b.startTime}-{b.endTime}
-                    </option>
-                  ))}
+                  {bookings.length > 0 ? (
+                    bookings.map(b => (
+                      <option key={b.id} value={b.id}>
+                        {b.courtName || 'Court'} • {format(new Date(b.date), 'MMM d')} {b.startTime}-{b.endTime}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No eligible bookings found</option>
+                  )}
                 </select>
+                {bookings.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You need confirmed bookings to create a game
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Title *</label>

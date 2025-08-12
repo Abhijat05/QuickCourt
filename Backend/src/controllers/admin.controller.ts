@@ -268,15 +268,15 @@ export const createCourt = async (req: Request & { user?: any }, res: Response) 
 };
 
 // Delete venue
-export const deleteVenue = async (req: Request & { user?: any }, res: Response) => {
-  try {
-    console.log('DELETE /api/admin/venues/:venueId', { venueId: req.params.venueId, userId: req.user?.id, role: req.user?.role });
-    const id = Number(req.params.venueId);
-    if (!Number.isFinite(id) || !Number.isInteger(id)) {
-      return res.status(400).json({ message: "Invalid venueId" });
-    }
+export const deleteVenue = async (req: Request, res: Response) => {
+  const { venueId } = req.params;
+  const id = parseInt(venueId);
 
-    // Optional: ensure it exists
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "Invalid venue ID" });
+  }
+
+  try {
     const existing = await db.select().from(venues).where(eq(venues.id, id));
     if (existing.length === 0) {
       return res.status(404).json({ message: "Venue not found" });

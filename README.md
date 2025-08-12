@@ -8,9 +8,21 @@ QuickCourt is a comprehensive sports court booking platform that allows users to
 - **Team Name:** Code 01
 - **Members:** Abhijat Sinha, Garv Khatri
 
+![React](https://img.shields.io/badge/React-18.0.0-61DAFB?style=for-the-badge&logo=react)
+![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql)
+![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.0+-06B6D4?style=for-the-badge&logo=tailwindcss)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-11.0+-0055FF?style=for-the-badge&logo=framer)
+![Express.js](https://img.shields.io/badge/Express.js-4.0+-000000?style=for-the-badge&logo=express)
+![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-Latest-C5F74F?style=for-the-badge)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens)
+
 ## Features
 
 ### Core Features
+
 - **User Authentication** - OTP-enabled flows with JWT-based security
 - **Court Search** - Find courts by location, sport type, and availability
 - **Real-time Booking** - Instant availability checks and confirmations
@@ -19,6 +31,7 @@ QuickCourt is a comprehensive sports court booking platform that allows users to
 - **Admin Panel** - User management, venue approvals, and comprehensive reports
 
 ### Additional Features
+
 - **Reviews & Ratings** - Comprehensive venue feedback system with star ratings
 - **Responsive UI** - Optimized for both mobile and desktop experiences
 - **Theming** - Light/dark mode with smooth transitions
@@ -28,6 +41,7 @@ QuickCourt is a comprehensive sports court booking platform that allows users to
 ## Tech Stack
 
 ### Frontend
+
 - **Framework:** React 18 with JSX
 - **Styling:** TailwindCSS with custom design system
 - **Animations:** Framer Motion for smooth transitions
@@ -36,6 +50,7 @@ QuickCourt is a comprehensive sports court booking platform that allows users to
 - **State Management:** Context API for auth and global state
 
 ### Backend
+
 - **Runtime:** Node.js 18+
 - **Framework:** Express.js with TypeScript
 - **Database:** PostgreSQL with Drizzle ORM
@@ -43,6 +58,7 @@ QuickCourt is a comprehensive sports court booking platform that allows users to
 - **File Storage:** Local file system for image uploads
 
 ### Development Tools
+
 - **Linting:** ESLint for code quality
 - **Package Manager:** npm
 - **Version Control:** Git with proper .gitignore setup
@@ -51,6 +67,7 @@ QuickCourt is a comprehensive sports court booking platform that allows users to
 ## Project Structure
 
 ### Frontend Architecture
+
 ```
 Frontend/
 ├── components.json          # Component configuration
@@ -90,6 +107,7 @@ Frontend/
 ```
 
 ### Backend Architecture
+
 ```
 Backend/
 ├── .env                    # Environment variables
@@ -122,6 +140,7 @@ Backend/
 ## Quick Start Guide
 
 ### Prerequisites
+
 - **Node.js** v18 or higher
 - **PostgreSQL** database
 - **npm** or **yarn** package manager
@@ -129,6 +148,7 @@ Backend/
 ### Backend Setup
 
 1. **Install dependencies:**
+
    ```bash
    cd Backend
    npm install
@@ -136,12 +156,13 @@ Backend/
 
 2. **Configure environment variables:**
    Create a `.env` file in the Backend directory:
+
    ```env
    # Required
    DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/quickcourt
    JWT_SECRET=your-super-secret-jwt-key-here
    NODE_ENV=development
-   
+
    # Optional
    PORT=5000
    SMTP_HOST=your-smtp-host
@@ -151,10 +172,11 @@ Backend/
    ```
 
 3. **Setup database:**
+
    ```bash
    # Run database migrations
    npm run db:migrate
-   
+
    # Seed with sample data (optional)
    npm run db:seed
    ```
@@ -168,6 +190,7 @@ Backend/
 ### Frontend Setup
 
 1. **Install dependencies:**
+
    ```bash
    cd Frontend
    npm install
@@ -175,6 +198,7 @@ Backend/
 
 2. **Configure environment:**
    Create a `.env` file in the Frontend directory:
+
    ```env
    VITE_API_BASE_URL=http://localhost:5000
    ```
@@ -188,18 +212,22 @@ Backend/
 ## Key Features Implementation
 
 ### Authentication System
+
 - JWT-based authentication with secure token storage
 - OTP verification for enhanced security
 - Role-based access control (User, Owner, Admin)
 - Protected routes with automatic redirects
 
 ### Reviews & Ratings System
+
 The review system is implemented across multiple components:
+
 - **Frontend:** [`ReviewForm`](Frontend/src/components/ReviewForm.jsx) for submissions and [`ReviewsList`](Frontend/src/components/ReviewsList.jsx) for display
 - **Backend:** [`review.controller.ts`](Backend/src/controllers/review.controller.ts) handles all review operations
 - **Features:** Star ratings, comment validation, booking verification
 
 ### Venue Management
+
 - Comprehensive venue details with image upload support
 - Real-time availability checking
 - Court management for venue owners
@@ -208,6 +236,7 @@ The review system is implemented across multiple components:
 ## Development Scripts
 
 ### Backend Commands
+
 ```bash
 # Development with hot reload
 npm run dev
@@ -223,6 +252,7 @@ npm run build       # Build TypeScript
 ```
 
 ### Frontend Commands
+
 ```bash
 # Development
 npm run dev         # Start dev server with HMR
@@ -239,21 +269,23 @@ npm run lint:fix    # Fix linting issues
 ## Environment Configuration
 
 ### Backend Environment Variables
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string | - |
-| `JWT_SECRET` | ✅ | Secret key for JWT tokens | - |
-| `NODE_ENV` | ✅ | Environment mode | development |
-| `PORT` | ❌ | Server port | 5000 |
-| `SMTP_HOST` | ❌ | Email server host | - |
-| `SMTP_PORT` | ❌ | Email server port | 587 |
-| `SMTP_USER` | ❌ | Email username | - |
-| `SMTP_PASS` | ❌ | Email password | - |
+
+| Variable       | Required | Description                  | Default     |
+| -------------- | -------- | ---------------------------- | ----------- |
+| `DATABASE_URL` | ✅       | PostgreSQL connection string | -           |
+| `JWT_SECRET`   | ✅       | Secret key for JWT tokens    | -           |
+| `NODE_ENV`     | ✅       | Environment mode             | development |
+| `PORT`         | ❌       | Server port                  | 5000        |
+| `SMTP_HOST`    | ❌       | Email server host            | -           |
+| `SMTP_PORT`    | ❌       | Email server port            | 587         |
+| `SMTP_USER`    | ❌       | Email username               | -           |
+| `SMTP_PASS`    | ❌       | Email password               | -           |
 
 ### Frontend Environment Variables
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `VITE_API_BASE_URL` | ✅ | Backend API URL | http://localhost:5000 |
+
+| Variable            | Required | Description     | Default               |
+| ------------------- | -------- | --------------- | --------------------- |
+| `VITE_API_BASE_URL` | ✅       | Backend API URL | http://localhost:5000 |
 
 ## Database Schema
 
@@ -269,13 +301,17 @@ The application uses PostgreSQL with Drizzle ORM for type-safe database operatio
 ## Design System
 
 ### Color Palette
+
 The app uses a sports-themed color system defined in [`Frontend/src/index.css`](Frontend/src/index.css):
+
 - **Primary:** Sports green (`--primary: 142 76% 36%`)
 - **Secondary:** Light gray (`--secondary: 210 40% 98%`)
 - **Success, Warning, Error:** Semantic colors for feedback
 
 ### UI Components
+
 Reusable components are located in [`Frontend/src/components/ui`](Frontend/src/components/ui):
+
 - **Card** - Content containers with header/body/footer
 - **Button** - Various styles and sizes
 - **Badge** - Status indicators
@@ -284,18 +320,21 @@ Reusable components are located in [`Frontend/src/components/ui`](Frontend/src/c
 ## Security Features
 
 ### Authentication
+
 - JWT tokens with secure HTTP-only storage
 - Password hashing with bcrypt
 - OTP verification for sensitive operations
 - Session management and automatic logout
 
 ### Data Protection
+
 - Input validation on all endpoints
 - SQL injection prevention with Drizzle ORM
 - XSS protection with proper sanitization
 - Environment variable protection
 
 ### Access Control
+
 - Role-based permissions (User/Owner/Admin)
 - Protected API routes with middleware
 - Frontend route guards
@@ -303,18 +342,21 @@ Reusable components are located in [`Frontend/src/components/ui`](Frontend/src/c
 ## API Documentation
 
 ### Authentication Endpoints
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/verify-otp` - OTP verification
 - `POST /api/auth/reset-password` - Password reset
 
 ### Venue Endpoints
+
 - `GET /api/venues` - List all venues
 - `GET /api/venues/:id` - Get venue details
 - `POST /api/venues` - Create venue (Owner only)
 - `PATCH /api/venues/:id` - Update venue
 
 ### Review Endpoints
+
 - `GET /api/reviews/venue/:id` - Get venue reviews
 - `POST /api/reviews` - Submit review
 - `PATCH /api/reviews/:id` - Update review
@@ -323,11 +365,13 @@ Reusable components are located in [`Frontend/src/components/ui`](Frontend/src/c
 ## Testing & Quality Assurance
 
 ### Code Quality
+
 - ESLint configuration for consistent code style
 - TypeScript for type safety in backend
 - Proper error handling and logging
 
 ### Performance
+
 - Vite for fast development builds
 - Code splitting and lazy loading
 - Optimized database queries with Drizzle ORM
@@ -335,6 +379,7 @@ Reusable components are located in [`Frontend/src/components/ui`](Frontend/src/c
 ## Deployment
 
 ### Production Setup
+
 1. Set `NODE_ENV=production` in backend
 2. Configure production database URL
 3. Build frontend with `npm run build`
@@ -342,17 +387,20 @@ Reusable components are located in [`Frontend/src/components/ui`](Frontend/src/c
 5. Setup proper HTTPS and security headers
 
 ### Docker Support
+
 The project includes [`docker-compose.yml`](Backend/docker-compose.yml) for containerized deployment.
 
 ## Contributing
 
 ### Code Style
+
 - Use ESLint configuration provided
 - Follow React hooks best practices
 - Implement proper TypeScript types
 - Write meaningful commit messages
 
 ### Pull Request Process
+
 1. Fork the repository
 2. Create feature branch
 3. Add tests for new features
@@ -362,7 +410,9 @@ The project includes [`docker-compose.yml`](Backend/docker-compose.yml) for cont
 ## Support & Contact
 
 For questions or support:
+
 - **Team:** Code 01 (Team #76)
 - **Members:** Abhijat Sinha, Garv Khatri
 - **Project:** QuickCourt Sports Booking Platform
+
 ---

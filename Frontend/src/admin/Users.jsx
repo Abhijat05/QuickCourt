@@ -10,7 +10,11 @@ import {
   ChevronRight, 
   Trash2, 
   Edit, 
-  Shield 
+  Shield,
+  Check,
+  AlertCircle,
+  Building,
+  User
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -18,7 +22,18 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [stats, setStats] = useState({
+    total: 0,
+    verified: 0,
+    unverified: 0,
+    admins: 0,
+    owners: 0,
+    users: 0
+  });
+  const [userToEditRole, setUserToEditRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -36,6 +51,20 @@ export default function AdminUsers() {
 
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    // Update stats whenever users changes
+    if (users.length > 0) {
+      setStats({
+        total: users.length,
+        verified: users.filter(u => u.isVerified).length,
+        unverified: users.filter(u => !u.isVerified).length,
+        admins: users.filter(u => u.role === 'admin').length,
+        owners: users.filter(u => u.role === 'owner').length,
+        users: users.filter(u => u.role === 'user').length
+      });
+    }
+  }, [users]);
 
   const handleChangeRole = async (userId, newRole) => {
     try {
@@ -62,6 +91,35 @@ export default function AdminUsers() {
     } catch (err) {
       console.error('Error deleting user:', err);
       toast.error('Failed to delete user');
+    }
+  };
+
+  const openRoleModal = (user) => {
+    setUserToEditRole(user);
+    setSelectedRole(user.role);
+  };
+
+  const confirmRoleChange = async () => {
+    if (!userToEditRole || selectedRole === userToEditRole.role) {
+      setUserToEditRole(null);
+      return;
+    }
+    
+    try {
+      setIsUpdatingRole(true);
+      await adminService.changeUserRole({ userId: userToEditRole.id, role: selectedRole });
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userToEditRole.id ? { ...user, role: selectedRole } : user
+        )
+      );
+      toast.success('User role updated successfully');
+      setUserToEditRole(null);
+    } catch (err) {
+      console.error('Error changing user role:', err);
+      toast.error('Failed to update user role');
+    } finally {
+      setIsUpdatingRole(false);
     }
   };
 
@@ -111,6 +169,98 @@ export default function AdminUsers() {
           <Button variant="outline">Export Users</Button>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6"
+      >
+        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <Card.Content className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Total</p>
+                <p className="text-xl font-bold text-primary">{stats.total}</p>
+              </div>
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <UsersIcon className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+        
+        <Card className="bg-gradient-to-r from-success/10 to-success/5 border-success/20">
+          <Card.Content className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Verified</p>
+                <p className="text-xl font-bold text-success">{stats.verified}</p>
+              </div>
+              <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
+                <Check className="w-4 h-4 text-success" />
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+        
+        <Card className="bg-gradient-to-r from-warning/10 to-warning/5 border-warning/20">
+          <Card.Content className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Unverified</p>
+                <p className="text-xl font-bold text-warning">{stats.unverified}</p>
+              </div>
+              <div className="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 text-warning" />
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+        
+        <Card>
+          <Card.Content className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Admins</p>
+                <p className="text-xl font-bold">{stats.admins}</p>
+              </div>
+              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <Shield className="w-4 h-4 text-success" />
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+        
+        <Card>
+          <Card.Content className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Owners</p>
+                <p className="text-xl font-bold">{stats.owners}</p>
+              </div>
+              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <Building className="w-4 h-4 text-warning" />
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+        
+        <Card>
+          <Card.Content className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Users</p>
+                <p className="text-xl font-bold">{stats.users}</p>
+              </div>
+              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+      </motion.div>
 
       <Card>
         <Card.Header>
@@ -172,13 +322,7 @@ export default function AdminUsers() {
                           </Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-warning"
-                          onClick={() => {
-                            // Cycle through roles: user -> owner -> admin -> user
-                            const roles = ['user', 'owner', 'admin'];
-                            const currentIndex = roles.indexOf(user.role);
-                            const nextRole = roles[(currentIndex + 1) % roles.length];
-                            handleChangeRole(user.id, nextRole);
-                          }}
+                          onClick={() => openRoleModal(user)}
                         >
                           <Shield className="h-4 w-4" />
                         </Button>
@@ -206,6 +350,88 @@ export default function AdminUsers() {
           )}
         </Card.Content>
       </Card>
+
+      {/* Role Management Modal */}
+      {userToEditRole && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-background rounded-lg shadow-xl max-w-md w-full mx-4"
+          >
+            <div className="p-5 border-b">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-bold text-lg">Change User Role</h3>
+              </div>
+            </div>
+            <div className="p-5">
+              <p className="mb-4">
+                Update role for <strong>{userToEditRole.fullName || userToEditRole.email}</strong>
+              </p>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  {['user', 'owner', 'admin'].map(role => (
+                    <div 
+                      key={role}
+                      onClick={() => setSelectedRole(role)}
+                      className={`p-4 border rounded-lg flex flex-col items-center justify-center cursor-pointer ${
+                        selectedRole === role ? 'border-primary bg-primary/5 ring-2 ring-primary/30' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Shield className={`h-6 w-6 mb-2 ${
+                        role === 'admin' ? 'text-success' : 
+                        role === 'owner' ? 'text-warning' : 
+                        'text-muted-foreground'
+                      }`} />
+                      <span className="text-sm font-medium capitalize">{role}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="space-y-2 mt-2">
+                  <h4 className="text-sm font-medium">Role Permissions:</h4>
+                  <div className="bg-muted/30 p-3 rounded-md text-sm">
+                    {selectedRole === 'admin' && 'Full access to all system features and user management.'}
+                    {selectedRole === 'owner' && 'Can create and manage venues, courts, and bookings.'}
+                    {selectedRole === 'user' && 'Can book courts and manage their own profile.'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <Button 
+                  variant="outline" 
+                  disabled={isUpdatingRole} 
+                  onClick={() => setUserToEditRole(null)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="default" 
+                  disabled={isUpdatingRole || selectedRole === userToEditRole.role} 
+                  onClick={confirmRoleChange}
+                >
+                  {isUpdatingRole ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Role'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

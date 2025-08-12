@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from 'next-themes'; // Add this import
 import { cn } from '../lib/utils';
 import ThemeToggleButton from './ui/theme-toggle-button';
 import { Avatar, AvatarFallback } from './ui/Avatar';
@@ -14,7 +15,7 @@ import {
 import { 
   Menu, X, ChevronDown, Bell, Search, Calendar, User, 
   Settings, LogOut, Home, Info, MapPin, Trophy, Clock,
-  Building, Users // added Users for Public Games tab
+  Building, Users
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -25,6 +26,7 @@ export default function Navbar() {
   const profileMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme } = useTheme(); // Get current theme
   
   // Handle navbar appearance on scroll
   useEffect(() => {
@@ -36,17 +38,22 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close profile dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileOpen && profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setProfileOpen(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [profileOpen]);
+  // Check if dark mode is active
+  const isDark = theme === 'dark';
+  
+  // Text color for transparent navbar (not scrolled)
+  // Use white for dark mode, dark text for light mode
+  const transparentTextClass = isDark ? "text-white" : "text-gray-800";
+  const transparentTextHoverClass = isDark ? "hover:text-white" : "hover:text-gray-900";
+  const transparentTextMutedClass = isDark ? "text-white/70" : "text-gray-600";
+
+  // Logo gradient for transparent navbar
+  const logoTextClass = isDark 
+    ? "bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent" 
+    : "text-gray-800";
+
+  // Logo background for transparent navbar
+  const logoBgClass = isDark ? "bg-white/10" : "bg-primary/10";
 
   // Check if a link is active
   const isActive = (path) => location.pathname === path;
@@ -94,20 +101,20 @@ export default function Navbar() {
           >
             <div className={cn(
               "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110",
-              scrolled ? "bg-primary/10" : "bg-white/10 backdrop-blur-sm"
+              scrolled ? "bg-primary/10" : logoBgClass
             )}>
               <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="" className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
               <span className={cn(
                 "font-bold transition-all duration-300",
-                scrolled ? "text-foreground" : "bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent"
+                scrolled ? "text-foreground" : logoTextClass
               )}>
                 QuickCourt
               </span>
               <span className={cn(
                 "text-xs font-normal -mt-1 transition-opacity duration-300",
-                scrolled ? "text-muted-foreground" : "text-white/70"
+                scrolled ? "text-muted-foreground" : transparentTextMutedClass
               )}>
                 Book courts instantly
               </span>
@@ -122,9 +129,10 @@ export default function Navbar() {
               onChange={handleTabChange}
               className={cn(
                 "mr-3",
-                scrolled ? "bg-background/20" : "bg-white/10"
+                scrolled ? "bg-background/20" : isDark ? "bg-white/10" : "bg-primary/10"
               )}
-              activeColor={scrolled ? "text-primary" : "text-white"}
+              activeColor={scrolled ? "text-primary" : isDark ? "text-white" : "text-primary"}
+              inactiveColor={scrolled ? "text-muted-foreground" : transparentTextClass}
             />
             
             <Button 
@@ -132,7 +140,7 @@ export default function Navbar() {
               size="icon" 
               className={cn(
                 "rounded-full hover:bg-background/30",
-                scrolled ? "text-foreground" : "text-white hover:text-white"
+                scrolled ? "text-foreground" : `${transparentTextClass} ${transparentTextHoverClass}`
               )}
               aria-label="Search"
             >
@@ -149,7 +157,7 @@ export default function Navbar() {
                   className={cn(
                     "flex items-center gap-2 rounded-full p-1.5 pl-1 transition-colors",
                     profileOpen ? "bg-accent/20" : "hover:bg-background/30",
-                    scrolled ? "text-foreground" : "text-white hover:text-white"
+                    scrolled ? "text-foreground" : `${transparentTextClass} ${transparentTextHoverClass}`
                   )}
                   aria-expanded={profileOpen}
                   aria-haspopup="true"
@@ -161,7 +169,7 @@ export default function Navbar() {
                   </Avatar>
                   <ChevronDown className={cn(
                     "h-4 w-4 transition-transform duration-200",
-                    scrolled ? "text-muted-foreground" : "text-white/70",
+                    scrolled ? "text-muted-foreground" : transparentTextMutedClass,
                     profileOpen && "rotate-180"
                   )} />
                 </Button>
@@ -228,7 +236,7 @@ export default function Navbar() {
                   asChild 
                   className={cn(
                     "hover:bg-background/20",
-                    !scrolled && "text-white hover:text-white"
+                    !scrolled && `${transparentTextClass} ${transparentTextHoverClass}`
                   )}
                 >
                   <Link to="/login">Login</Link>
@@ -247,7 +255,7 @@ export default function Navbar() {
               size="icon" 
               className={cn(
                 "rounded-full",
-                scrolled ? "text-foreground" : "text-white"
+                scrolled ? "text-foreground" : transparentTextClass
               )}
               aria-label="Search"
             >
@@ -263,7 +271,9 @@ export default function Navbar() {
                   size="icon" 
                   className={cn(
                     "border-primary/20 p-2 rounded-full",
-                    scrolled ? "bg-background/50" : "bg-white/10 text-white"
+                    scrolled 
+                      ? "bg-background/50" 
+                      : isDark ? "bg-white/10 text-white" : "bg-primary/10 text-gray-800"
                   )}
                 >
                   {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -375,7 +385,7 @@ export default function Navbar() {
                         onClick={() => setOpen(false)}
                       >
                         <Info size={16} />
-                        About
+                        About Us
                       </Link>
                     </div>
                     

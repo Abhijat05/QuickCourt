@@ -18,6 +18,7 @@ import Profile from './pages/Profile';
 import UserBookings from './pages/UserBookings';
 import BookingHistory from './pages/BookingHistory';
 import NotFound from './pages/NotFound';
+import About from './pages/About.jsx';
 
 // Admin imports
 import AdminUsers from './admin/Users';
@@ -122,6 +123,9 @@ export default function App() {
           {/* Public game routes */}
           <Route path="/games" element={<PublicGames />} />
           <Route path="/games/:gameId" element={<PublicGameDetail />} />
+          
+          {/* About page route */}
+          <Route path="/about" element={<About />} />
           
           {/* Catch all route for 404 */}
           <Route path="*" element={<NotFound />} />

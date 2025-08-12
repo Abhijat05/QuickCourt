@@ -1,17 +1,19 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import InputField from '../components/InputField';
 import { authService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/Alert';
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const [redirectUrl, setRedirectUrl] = useState('/dashboard');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +23,14 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Check if there's a redirect URL in the location state
+  useEffect(() => {
+    if (location.state?.from) {
+      setRedirectUrl(location.state.from);
+    }
+  }, [location]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,6 +47,8 @@ export default function Login() {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    
     if (!formData.password.trim()) newErrors.password = 'Password is required';
 
     setErrors(newErrors);
@@ -50,38 +62,56 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      const response = await authService.login(formData);
-      console.log("Login response:", response.data); // Add this for debugging
+      const response = await authService.login({
+        ...formData,
+        rememberMe
+      });
 
       if (response.data.token) {
         // Regular login successful
         login(response.data.token, response.data.user);
-        toast.success('Login successful!');
-        navigate('/dashboard');
+        toast.success(`Welcome back, ${response.data.user.fullName || 'User'}!`);
+        navigate(redirectUrl);
       } else {
         // 2FA is enabled, navigate to 2FA verification
-        toast.success('Please enter your 2FA code');
+        toast.success('Please enter your verification code');
         navigate('/verify-2fa', { state: { email: formData.email } });
       }
     } catch (error) {
       setLoginAttempts(prevAttempts => prevAttempts + 1);
-      toast.error(error.response?.data?.message || 'Failed to login');
-      console.error(error);
+      
+      if (error.response?.status === 401) {
+        toast.error('Invalid email or password');
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Login failed. Please try again.');
+      }
+      
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-background to-background/80">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-background to-background/80"
+    >
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+        <motion.div 
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          className="text-center mb-6"
+        >
           <div className="inline-flex p-3 rounded-2xl bg-primary/10 mb-4">
-            <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="Logo" className="w-14 h-14" />
+            <img src="https://www.svgrepo.com/show/219526/basketball-court-playground.svg" alt="QuickCourt Logo" className="w-14 h-14" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-1">Welcome back</h1>
           <p className="text-muted-foreground">Sign in to continue to QuickCourt</p>
-        </div>
+        </motion.div>
 
         <Card className="border-border/40 shadow-lg animate-fade-in-up">
           <Card.Content className="p-6 pt-6">
@@ -137,7 +167,12 @@ export default function Login() {
 
               <div className="flex items-center justify-between">
                 <label className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary/50 h-4 w-4" />
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe}
+                    onChange={() => setRememberMe(!rememberMe)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary/50 h-4 w-4" 
+                  />
                   <span className="ml-2 text-sm text-muted-foreground">Remember me</span>
                 </label>
                 <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
@@ -152,15 +187,11 @@ export default function Login() {
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loader2 className="animate-spin mr-2 h-5 w-5" />
                     Signing in...
                   </div>
                 ) : 'Sign in'}
               </Button>
-
             </form>
           </Card.Content>
         </Card>
@@ -174,6 +205,6 @@ export default function Login() {
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
